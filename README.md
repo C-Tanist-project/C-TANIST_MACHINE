@@ -38,4 +38,4 @@ In case of doubt, refer to the [meson installation manual](https://mesonbuild.co
 - [@gckneip](https://github.com/gckneip)
 - [@mthsrnn](https://www.github.com/mthsrnn)
 - [@Vitor-a-o](https://github.com/Vitor-a-o)
-- Rafael Martins (Profile To Be Added)
+- [@RaffaellSM](https://github.com/RaffaellSM)
