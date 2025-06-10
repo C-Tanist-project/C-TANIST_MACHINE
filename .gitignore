@@ -1,0 +1,10 @@
+build/
+.ccls-cache
+.clangd
+compile_commands.json
+*.ini
+*.exe
+subprojects/glfw-*
+subprojects/imgui-*
+subprojects/packagecache
+
