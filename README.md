@@ -1,4 +1,6 @@
-![assets/pentacle.svg](https://raw.githubusercontent.com/Antonio-Brum/C-TANIST_MACHINE/bdcd00b156e7e0f84975cc284f1859e1dce37953/assets/pentacle.svg)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Antonio-Brum/C-TANIST_MACHINE/bdcd00b156e7e0f84975cc284f1859e1dce37953/assets/pentacle.svg">
+</p>
 ![GitHub License](https://img.shields.io/github/license/Antonio-Brum/C-TANIST_MACHINE)
 ![GitHub contributors](https://img.shields.io/github/contributors/Antonio-Brum/C-TANIST_MACHINE)
 ![GitHub top language](https://img.shields.io/github/languages/top/Antonio-Brum/C-TANIST_MACHINE)
@@ -24,9 +26,9 @@ You need to have installed and properly configured on your machine:
 
 If you're on `Linux` or another *POSIX*-compliant OS, use your package manager of choice.
 
-If your're on `Windows`, you can try the [bundled MSI installer](https://github.com/mesonbuild/meson/releases/download/1.8.1/meson-1.8.1-64.msi).
+If you're on `Windows`, you can try the [bundled MSI installer](https://github.com/mesonbuild/meson/releases/download/1.8.1/meson-1.8.1-64.msi).
 
-In case of doubt, refer to the [meson installation manual](https://mesonbuild.com/Getting-meson.html)
+In case of doubt, refer to the [meson installation manual](https://mesonbuild.com/Getting-meson.html).
 
 ## Authors
 - [@Antonio-Brum](https://github.com/Antonio-Brum)
