@@ -25,13 +25,12 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
     // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "ImGui Demo Window", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1920, 1080, "ImGui Demo Window", nullptr, nullptr);
     if (window == nullptr)
         return 1;
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
-    //
-    //
+    
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         fprintf(stderr, "Failed to initialize GLAD!\n");
@@ -64,6 +63,7 @@ int main()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        ImGui::ColorEdit3("clear color", (float*)&clear_color, ImGuiColorEditFlags_None);
 
         // Show the big demo window
         if (show_demo_window)

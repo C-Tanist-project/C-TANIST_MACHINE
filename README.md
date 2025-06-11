@@ -21,13 +21,30 @@ You need to have installed and properly configured on your machine:
 - `meson`
 - `ninja`
 - `python`
+- `OpenGL`
 - a compatible `c`/`c++` compiler
 
-`meson` should handle all other dependencies for you. 
+If you're on `Linux` or another *POSIX*-compliant OS, use your package manager of choice to install the previous dependencies and:
 
-If you're on `Linux` or another *POSIX*-compliant OS, use your package manager of choice.
+`glfw`:
+
+```sh
+$ [packager manager command to install] glfw
+```
+
+or it's build deps:
+Via *apt* (Debian, Ubuntu and derivates): `sudo apt install xorg-dev libwayland-dev libxkbcommon-dev wayland-protocols extra-cmake-modules`
+
+Via *dnf* (Fedora and derivates): `sudo dnf install libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel wayland-devel libxkbcommon-devel wayland-protocols-devel extra-cmake-modules`
+
+Arch and derivates: find what is provided by the above packages.
+
+Also, make sure you have an OpenGL implementation **with developer headers** installed (`mesa-devel`, `libgl-dev`).
+
 
 If you're on `Windows`, you can try the [bundled MSI installer](https://github.com/mesonbuild/meson/releases/download/1.8.1/meson-1.8.1-64.msi).
+
+`meson` should handle all other dependencies for you. 
 
 In case of doubt, refer to the [meson installation manual](https://mesonbuild.com/Getting-meson.html).
 
@@ -37,5 +54,5 @@ In case of doubt, refer to the [meson installation manual](https://mesonbuild.co
 - [@duhdah](https://github.com/duhdah)
 - [@gckneip](https://github.com/gckneip)
 - [@mthsrnn](https://www.github.com/mthsrnn)
-- [@Vitor-a-o](https://github.com/Vitor-a-o)
 - [@RaffaellSM](https://github.com/RaffaellSM)
+- [@Vitor-a-o](https://github.com/Vitor-a-o)
