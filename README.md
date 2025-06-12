@@ -6,7 +6,7 @@
 ![GitHub contributors](https://img.shields.io/github/contributors/Antonio-Brum/C-TANIST_MACHINE)
 ![GitHub top language](https://img.shields.io/github/languages/top/Antonio-Brum/C-TANIST_MACHINE)
 # The C-Tanist Virtual Machine
-Our virtual machine (and future complete assembly suite) is here! It's called `pentacle`.
+Our virtual machine (and future complete assembly suite) is here! It's called `Pentacle`.
 
 ## How to compile:
 
