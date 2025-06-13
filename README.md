@@ -1,10 +1,15 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Antonio-Brum/C-TANIST_MACHINE/bdcd00b156e7e0f84975cc284f1859e1dce37953/assets/pentacle.svg">
+  <img src="https://raw.githubusercontent.com/C-Tanist-project/C-TANIST_MACHINE/bdcd00b156e7e0f84975cc284f1859e1dce37953/assets/pentacle.svg">
+  <p align="center">
+      <img src="https://img.shields.io/github/license/C-Tanist-project/C-TANIST_MACHINE?style=for-the-badge&color=%23DE002B">
+      <img src="https://img.shields.io/github/contributors/C-Tanist-project/C-TANIST_MACHINE?style=for-the-badge&color=%23DE002B">
+      <img src="https://img.shields.io/badge/Programa%C3%A7%C3%A3o%20de%20Sistemas-000000?style=for-the-badge&color=%23DE002B">    
+      <img src="https://img.shields.io/github/languages/top/C-Tanist-project/C-TANIST_MACHINE?style=for-the-badge&color=%23DE002B">
+      <img src="https://img.shields.io/github/commit-activity/t/C-Tanist-project/C-TANIST_MACHINE?style=for-the-badge&color=%23DE002B">
+  </p>
+
 </p>
 
-![GitHub License](https://img.shields.io/github/license/Antonio-Brum/C-TANIST_MACHINE)
-![GitHub contributors](https://img.shields.io/github/contributors/Antonio-Brum/C-TANIST_MACHINE)
-![GitHub top language](https://img.shields.io/github/languages/top/Antonio-Brum/C-TANIST_MACHINE)
 # The C-Tanist Virtual Machine
 Our virtual machine (and future complete assembly suite) is here! It's called `pentacle`.
 
