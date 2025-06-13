@@ -12,7 +12,7 @@ Our virtual machine (and future complete assembly suite) is here! It's called `p
 
 ```bash
 $ meson setup build
-$ ninja -C build
+$ meson compile -C build
 ```
 
 ## Dependencies
