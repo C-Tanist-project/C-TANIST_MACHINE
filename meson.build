@@ -1,6 +1,6 @@
 project('pentacle', 'cpp', 'c')
 
-srcs = ['src/main.cpp']
+srcs = ['src/main.cpp', 'src/ui.cpp']
 
 imgui_compiled_options = ['opengl=enabled',
                           'glfw=enabled',
