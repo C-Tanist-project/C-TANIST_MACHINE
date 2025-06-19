@@ -17,7 +17,7 @@ typedef enum {
     DIRECT,
     INDIRECT
 
-} OperatorFormat;
+} OperandFormat;
 
 typedef enum {
     OP_BR = 0,
@@ -56,21 +56,22 @@ typedef struct vmstate {
 class Operations {
    public:
     // um map de Opcodes direto em ponteiros de funções :O
-    // MAIN CHAMA ESSA FUNÇÂO pra construir o map estático
-    using OpFunc = void (*)(VMState *, int16_t *);
+    // MAIN CHAMA INITIALIZEMAP pra construir o map estático
+    // no final isso aqui é só um hashmap elegante
+    using OpFunc = void (*)(VMState *);
 
-    static std::map<Opcode, OpFunc> executeFunction;
+    static std::map<Opcode, OpFunc> execute;
 
     static void InitializeMap() {
-        executeFunction[OP_ADD] = &ADD;
-        executeFunction[OP_SUB] = &SUB;
-        executeFunction[OP_MULT] = &MULT;
-        executeFunction[OP_DIVIDE] = &DIVIDE;
+        execute[OP_ADD] = &ADD;
+        execute[OP_SUB] = &SUB;
+        execute[OP_MULT] = &MULT;
+        execute[OP_DIVIDE] = &DIVIDE;
     }
 
-    static void ADD(VMState *vmState, int16_t *operands) {}
-    static void SUB(VMState *vmState, int16_t *operands) {}
-    static void MULT(VMState *vmState, int16_t *operands) {}
-    static void DIVIDE(VMState *vmState, int16_t *operands) {}
+    static void ADD(VMState *vm) {}
+    static void SUB(VMState *vm) {}
+    static void MULT(VMState *vm) {}
+    static void DIVIDE(VMState *vm) {}
 };
 #endif  // !H_VM

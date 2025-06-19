@@ -1,6 +1,9 @@
 #include "ui.hpp"
+#include "vm.hpp"
 
 int main() {
+    Operations::InitializeMap();
+
     GLFWwindow *window = MainWindowSetup(1280, 720, "Pentacle VM");
 
     IMGUIsetup(window);
