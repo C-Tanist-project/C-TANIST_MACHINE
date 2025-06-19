@@ -1,5 +1,7 @@
 #include "ui.hpp"
 
+#include <filesystem>
+
 // INSERIR OS WIDGETS DE VOCÊS AQUI!!!
 void RenderMainWindow(GLFWwindow *window) {
   glfwPollEvents();
@@ -63,10 +65,12 @@ void RenderMainWindow(GLFWwindow *window) {
                          70);
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + available.y - button_size.y);
     if (ImGui::Button("Load", button_size)) {
-      FILE *file = fopen("entrada.txt",
-                         "r");  // arquivo por enquanto está na pasta build
+      std::string path = std::filesystem::current_path() / "assets/entrada.txt";
+      FILE *file = fopen(path.c_str(),
+                         "r");  // arquivo por enquanto está na pasta assets
       if (file == NULL) {
-        perror("Erro ao abrir o arquivo");
+        fprintf(stderr, "Erro ao abrir o arquivo '%s': %s\n", path.c_str(),
+                strerror(errno));
       }
       int16_t value;
       int i = 0;
