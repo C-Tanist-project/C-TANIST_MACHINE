@@ -9,8 +9,8 @@ void RenderMainWindow(GLFWwindow *window) {
     ImGui::NewFrame();
 
     // Renderização começa aqui
-
-    ImGui::ShowDemoWindow();
+    static bool show_control_window = true;
+    RenderControlsWindow(show_control_window);
 
     ImGui::Render();
     int display_w, display_h;

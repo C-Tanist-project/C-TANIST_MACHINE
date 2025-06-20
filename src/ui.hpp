@@ -5,14 +5,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <iostream>
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
 void GLFWErrorCallback(int error, const char *description);
-GLFWwindow *MainWindowSetup(const int width, const int height, const char *title);
+GLFWwindow *MainWindowSetup(const int width, const int height,
+                            const char *title);
 void IMGUIsetup(GLFWwindow *window);
 void RenderMainWindow(GLFWwindow *window);
 void WindowCleanup(GLFWwindow *window);
+void RenderControlsWindow(bool &window);
+void SkipToEnd();
 
-#endif // !H_UI
+#endif  // !H_UI
