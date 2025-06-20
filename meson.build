@@ -1,6 +1,6 @@
 project('pentacle', 'cpp', 'c')
 
-srcs = ['src/main.cpp', 'src/ui.cpp']
+srcs = ['src/main.cpp', 'src/ui.cpp', 'src/windows/memory_editor.cpp']
 
 imgui_compiled_options = ['opengl=enabled',
                           'glfw=enabled',
@@ -19,6 +19,7 @@ imgui_compiled_options = ['opengl=enabled',
                           'sdl3_renderer=disabled',
                           'allegro5=disabled']
 
+
 glfw_lib = dependency('glfw3', required: true, static: true)
 imgui_lib = dependency('imgui', required: true, static: true, default_options: imgui_compiled_options)
 
@@ -29,7 +30,7 @@ endif
 
 if not imgui_lib.found()
   imgui_proj = subproject('imgui')
-  imgui_lib = imgui_proj.get_variable('imgui')
+  imgui_lib = imgui_proj.get_variable('imgui_dep')
 endif
 
 deps = [glfw_lib, imgui_lib]
