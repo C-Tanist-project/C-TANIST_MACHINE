@@ -1,15 +1,22 @@
 #ifndef H_UI
 #define H_UI
+#define __STDC_WANT_LIB_EXT1__ 1
 
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "L2DFileDialog.h"
+#include <algorithm>
+#include <filesystem>
+#include <vector>
+
+#include "external/ImGuiFileDialog.h"
+#include "external/ImGuiFileDialogConfig.h"
+#include "external/imgui_memory_editor.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "imgui_memory_editor.h"
 
 void GLFWErrorCallback(int error, const char *description);
 GLFWwindow *MainWindowSetup(const int width, const int height,

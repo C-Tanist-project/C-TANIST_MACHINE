@@ -1,6 +1,6 @@
 project('pentacle', 'cpp', 'c')
 
-srcs = ['src/main.cpp', 'src/ui.cpp', 'src/windows/memory_editor.cpp']
+srcs = ['src/main.cpp', 'src/ui.cpp', 'src/windows/memory_editor.cpp', 'src/external/ImGuiFileDialog.cpp']
 
 imgui_compiled_options = ['opengl=enabled',
                           'glfw=enabled',
