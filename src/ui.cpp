@@ -1,18 +1,17 @@
 #include "ui.hpp"
 
 // INSERIR OS WIDGETS DE VOCÊS AQUI!!!
-void RenderMainWindow(GLFWwindow *window) {
+void RenderMainWindow(GLFWwindow *window, VMState &vm_state) {
     glfwPollEvents();
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    RenderMemoryEditor();
-
     // Renderização começa aqui
     static bool show_control_window = true;
-    RenderControlsWindow(show_control_window);
+    RenderMemoryEditor(vm_state);
+    RenderControlsWindow(show_control_window, vm_state);
 
     ImGui::Render();
     int display_w, display_h;
