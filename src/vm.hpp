@@ -20,6 +20,7 @@ typedef enum {
   INDIRECT
 
 } OperandFormat;
+typedef enum { IMMEDIATE, DIRECT, INDIRECT } OperandFormat;
 
 typedef enum {
   OP_BR = 0,
@@ -65,16 +66,22 @@ class Operations {
   static std::map<Opcode, OpFunc> execute;
 
   static void InitializeMap() {
+    execute[OP_BR] = &BR;
+    execute[OP_BRPOS] = &BRPOS;
     execute[OP_ADD] = &ADD;
-    execute[OP_CALL] = &CALL;
-    execute[OP_COPY] = &COPY;
     execute[OP_SUB] = &SUB;
     execute[OP_MULT] = &MULT;
     execute[OP_DIVIDE] = &DIVIDE;
-    execute[OP_RET] = &RET;
+    execute[OP_LOAD] = &LOAD;
+    execute[OP_STORE] = &STORE;
+    execute[OP_WRITE] = &WRITE;
+    execute[OP_BRZERO] = &BRZERO;
+    execute[OP_BRNEG] = &BRNEG;
     execute[OP_STOP] = &STOP;
-    execute[OP_MULT] = &MULT;
     execute[OP_READ] = &READ;
+    execute[OP_COPY] = &COPY;
+    execute[OP_CALL] = &CALL;
+    execute[OP_RET] = &RET;
     execute[OP_PUSH] = &PUSH;
     execute[OP_POP] = &POP;
   }
@@ -124,6 +131,47 @@ class Operations {
     int16_t *reg = FetchRegister((Registers)vm->memory[vm->pc + 1], vm);
     *reg = vm->memory[vm->sp];
     vm->sp -= 1;
+  }
+  static void BR(VMState *vm) {
+    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
+    vm->pc = operand;
+  }
+  static void BRPOS(VMState *vm) {
+    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
+    if (vm->acc > 0) {
+      vm->pc = operand;
+    } else {
+      vm->pc += 2;
+    }
+  }
+  static void SUB(VMState *vm) {
+    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
+    vm->acc -= vm->memory[operand];
+  }
+  static void LOAD(VMState *vm) {
+    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
+    vm->acc = vm->memory[operand];
+  }
+  static void STORE(VMState *vm) { vm->memory[vm->pc] = vm->acc; }
+  static void WRITE(VMState *vm) {
+    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
+    std::cout << "Output: " << operand << std::endl;
+  }
+  static void BRZERO(VMState *vm) {
+    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
+    if (vm->acc == 0) {
+      vm->pc = operand;
+    } else {
+      vm->pc += 2;
+    }
+  }
+  static void BRNEG(VMState *vm) {
+    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
+    if (vm->acc < 0) {
+      vm->pc = operand;
+    } else {
+      vm->pc += 2;
+    }
   }
 };
 #endif  // !H_VM
