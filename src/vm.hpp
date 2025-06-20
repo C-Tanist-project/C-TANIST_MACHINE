@@ -12,14 +12,20 @@
 #include <thread>
 #include <variant>
 
+typedef struct vmstate {
+  int16_t memory[500];
+
+  int16_t pc, sp, acc, mop, ri, re, r0, r1;
+
+  std::shared_mutex mutex;
+
+  std::atomic<bool> sigRun{false}, sigRunContinuous{false}, sigStep{false},
+      sigPause{false}, sigStop{true}, isHalted{false}, hasError{false};
+
+} VMState;
+
 typedef enum { ACC, R0, R1 } Registers;
 
-typedef enum {
-  IMMEDIATE,
-  DIRECT,
-  INDIRECT
-
-} OperandFormat;
 typedef enum { IMMEDIATE, DIRECT, INDIRECT } OperandFormat;
 
 typedef enum {
@@ -44,17 +50,16 @@ typedef enum {
   OP_POP = 18,
 } Opcode;
 
-typedef struct vmstate {
-  int16_t memory[500];
+VMState *VMStateSetup();
 
-  int16_t pc, sp, acc, mop, ri, re, r0, r1;
+OperandFormat DecodeOperandFormat(int16_t instruction,
+                                  unsigned char operandIdx);
 
-  std::shared_mutex mutex;
+void VMEngine(VMState *vm);
 
-  std::atomic<bool> sigRun{false}, sigStep{false}, sigPause{false},
-      sigStop{false}, isHalted{false}, hasError{false};
+int16_t *FetchRegister(Registers operandIdx, VMState *vm);
 
-} VMState;
+int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState *vm);
 
 class Operations {
  public:
@@ -90,7 +95,6 @@ class Operations {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     vm->acc += operand;
   }
-  static void SUB(VMState *vm) {}
   static void MULT(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
 
@@ -174,4 +178,5 @@ class Operations {
     }
   }
 };
+
 #endif  // !H_VM
