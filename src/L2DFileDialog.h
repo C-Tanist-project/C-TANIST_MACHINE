@@ -15,7 +15,7 @@
 
         Modified by Gustavo Cunha Kneip on 06/20/2025
         Changes: Made compatible with Linux by changing windows only functions
-        to cross plataform ones
+        to cross plataform ones and chaing '\' to '/'.
 
 */
 
@@ -286,7 +286,7 @@ inline void ShowFileDialog(bool* open, char* buffer,
 
         std::string selected_file_path =
             file_dialog_current_path +
-            (file_dialog_current_path.back() == '\\' ? "" : "\\") +
+            (file_dialog_current_path.back() == '//' ? "" : "//") +
             (file_dialog_current_folder.size() > 0 ? file_dialog_current_folder
                                                    : file_dialog_current_file);
 
@@ -350,7 +350,7 @@ inline void ShowFileDialog(bool* open, char* buffer,
                 } else {
                     std::string new_file_path =
                         file_dialog_current_path +
-                        (file_dialog_current_path.back() == '\\' ? "" : "\\") +
+                        (file_dialog_current_path.back() == '//' ? "" : "//") +
                         new_folder_name;
                     std::filesystem::create_directory(new_file_path);
                     ImGui::CloseCurrentPopup();
@@ -378,7 +378,7 @@ inline void ShowFileDialog(bool* open, char* buffer,
             if (ImGui::Button("Yes")) {
                 std::filesystem::remove(
                     file_dialog_current_path +
-                    (file_dialog_current_path.back() == '\\' ? "" : "\\") +
+                    (file_dialog_current_path.back() == '//' ? "" : "//") +
                     file_dialog_current_folder);
                 ImGui::CloseCurrentPopup();
             }
@@ -412,7 +412,7 @@ inline void ShowFileDialog(bool* open, char* buffer,
                 } else {
                     auto path =
                         file_dialog_current_path +
-                        (file_dialog_current_path.back() == '\\' ? "" : "\\") +
+                        (file_dialog_current_path.back() == '//' ? "" : "//") +
                         file_dialog_current_file;
                     strncpy(buffer, path.c_str(), path.length() + 1);
                     strcpy(file_dialog_error, "");
@@ -424,7 +424,7 @@ inline void ShowFileDialog(bool* open, char* buffer,
                 } else {
                     auto path =
                         file_dialog_current_path +
-                        (file_dialog_current_path.back() == '\\' ? "" : "\\") +
+                        (file_dialog_current_path.back() == '//' ? "" : "//") +
                         file_dialog_current_file;
                     strncpy(buffer, path.c_str(), path.length() + 1);
                     strcpy(file_dialog_error, "");
