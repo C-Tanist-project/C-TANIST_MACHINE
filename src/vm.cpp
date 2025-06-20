@@ -29,14 +29,15 @@ OperandFormat DecodeOperandFormat(int16_t instruction,
 
 int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState *vm) {
     OperandFormat operandFormat = DecodeOperandFormat(instruction, operandIdx);
+    int16_t rawOperandValue = vm->pc + operandIdx + 1;
 
     switch (operandFormat) {
         case IMMEDIATE:
-            return vm->memory[vm->pc + operandIdx + 1];
+            return vm->memory[rawOperandValue];
         case INDIRECT:
-            return vm->memory[vm->memory[vm->pc + operandIdx + 1]];
+            return vm->memory[vm->memory[rawOperandValue]];
         case DIRECT:
-            return vm->memory[vm->pc + operandIdx + 1];
+            return rawOperandValue;
     }
 }
 
@@ -49,6 +50,11 @@ void ExecuteStep(VMState *vm) {
     switch (opcode) {
         case OP_COPY:
             offset = 3;
+            break;
+        case OP_BR:
+        case OP_BRNEG:
+        case OP_BRZERO:
+            offset = 0;
             break;
         case OP_RET:
         case OP_STOP:
