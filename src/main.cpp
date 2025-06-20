@@ -1,15 +1,18 @@
 #include "ui.hpp"
+#include "vm.hpp"
 
 int main() {
-    GLFWwindow *window = MainWindowSetup(1280, 720, "Pentacle VM");
+  Operations::InitializeMap();
 
-    IMGUIsetup(window);
+  GLFWwindow *window = MainWindowSetup(1280, 720, "Pentacle VM");
 
-    while (!glfwWindowShouldClose(window)) {
-        RenderMainWindow(window);
-    }
+  IMGUIsetup(window);
 
-    WindowCleanup(window);
+  while (!glfwWindowShouldClose(window)) {
+    RenderMainWindow(window);
+  }
 
-    return 0;
+  WindowCleanup(window);
+
+  return 0;
 }
