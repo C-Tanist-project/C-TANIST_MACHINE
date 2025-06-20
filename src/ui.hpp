@@ -1,6 +1,6 @@
 #ifndef H_UI
 #define H_UI
-#define __STDC_WANT_LIB_EXT1__ 1
+#define USE_STD_FILESYSTEM 1
 
 #include <GLFW/glfw3.h>
 #include <stdio.h>
