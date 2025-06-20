@@ -10,9 +10,11 @@
 #include "imgui_impl_opengl3.h"
 
 void GLFWErrorCallback(int error, const char *description);
-GLFWwindow *MainWindowSetup(const int width, const int height, const char *title);
+GLFWwindow *MainWindowSetup(const int width, const int height,
+                            const char *title);
 void IMGUIsetup(GLFWwindow *window);
-void RenderMainWindow(GLFWwindow *window);
+void RenderMainWindow(GLFWwindow *window, VMState *vmState);
+void RenderVMState(VMState *vmState);
 void WindowCleanup(GLFWwindow *window);
 
-#endif // !H_UI
+#endif  // !H_UI
