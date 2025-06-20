@@ -44,15 +44,15 @@ OperandFormat DecodeOperandFormat(int16_t instruction,
 
 int16_t *FetchRegister(Registers operandIdx, VMState *vm) {
   switch (operandIdx) {
-    case ACC:
-      return &(vm->acc);
-      break;
+    // case ACC:
+    //   return &(vm->acc);
+    //   break;
     case R0:
       return &(vm->r0);
-      break;
     case R1:
       return &(vm->r1);
-      break;
+    default:
+      return &(vm->acc);
   }
 }
 
@@ -62,17 +62,21 @@ int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState *vm) {
   int16_t rawOperandValue = vm->memory[rawOperandAddress];
 
   switch (operandFormat) {
-    case IMMEDIATE:
-      return rawOperandValue;
+    // case IMMEDIATE:
+    //   return rawOperandValue;
     case DIRECT:
       return vm->memory[rawOperandValue];
     case INDIRECT:
       return vm->memory[vm->memory[rawOperandValue]];
+    default:
+      return rawOperandAddress;
   }
 }
 
 void ExecuteStep(VMState *vm) {
   unsigned char offset = 0;
+
+  std::unique_lock lock(vm->mutex);
   int16_t instruction = vm->memory[vm->pc];
 
   Opcode opcode = (Opcode)((instruction & 31) % 19);
@@ -109,11 +113,13 @@ void ExecuteStep(VMState *vm) {
   Operations::execute[opcode](vm);
 
   vm->pc += offset;
+  lock.unlock();
 }
 
 void VMEngine(VMState *vm) {
-  if (vm->sigStop || vm->sigPause) {
-    while (vm->sigRun != 1) {
+  while (vm->sigRun) {
+    if (!vm->sigPause) {
+      ExecuteStep(vm);
     }
   }
 }

@@ -15,9 +15,11 @@ int main() {
   IMGUIsetup(window);
 
   while (!glfwWindowShouldClose(window)) {
+    std::unique_lock lock(vm->mutex);
     RenderMainWindow(window);
+    lock.unlock();
   }
-
+  engine.join();
   WindowCleanup(window);
 
   return 0;

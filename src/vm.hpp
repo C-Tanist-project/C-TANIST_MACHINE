@@ -120,7 +120,10 @@ class Operations {
     vm->memory[vm->sp] &= 0;
     vm->sp -= 1;
   }
-  static void STOP(VMState *vm) { vm->sigStop = true; }
+  static void STOP(VMState *vm) {
+    vm->sigRun = false;
+    vm->sigStop = true;
+  }
   static void READ(VMState *vm) {
     int16_t input;
     std::cin >> input;
