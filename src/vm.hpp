@@ -18,6 +18,7 @@ typedef enum {
   INDIRECT
 
 } OperandFormat;
+typedef enum { IMMEDIATE, DIRECT, INDIRECT } OperandFormat;
 
 typedef enum {
   OP_BR = 0,
