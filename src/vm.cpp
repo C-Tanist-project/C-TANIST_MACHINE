@@ -27,7 +27,7 @@ OperandFormat DecodeOperandFormat(int16_t instruction,
   }
 }
 
-int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState *vm) {
+int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState* vm) {
   OperandFormat operandFormat = DecodeOperandFormat(instruction, operandIdx);
 
   switch (operandFormat) {
@@ -40,13 +40,29 @@ int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState *vm) {
   }
 }
 
-void ExecuteStep(VMState *vm) {
+int16_t* FetchRegister(Registers operandIdx, VMState* vm) {
+  switch (operandIdx) {
+    case ACC:
+      return &(vm->acc);
+      break;
+    case R0:
+      return &(vm->r0);
+      break;
+    case R1:
+      return &(vm->r1);
+      break;
+  }
+}
+
+void ExecuteStep(VMState* vm) {
   unsigned char offset = 0;
   int16_t instruction = vm->memory[vm->pc];
 
   Opcode opcode = (Opcode)((instruction & 31) % 19);
 
   switch (opcode) {
+    case OP_ADD:
+      offset = 2;
     case OP_COPY:
       offset = 3;
       break;
@@ -54,6 +70,18 @@ void ExecuteStep(VMState *vm) {
     case OP_STOP:
       offset = 1;
       break;
+    case OP_PUSH:
+      if (vm->sp == 31) {
+        vm->pc = 0;
+        vm->sigPause = true;
+        return;
+      }
+    case OP_POP:
+      if (vm->sp == 2) {
+        vm->pc = 0;
+        vm->sigPause = true;
+        return;
+      }
     default:
       offset = 2;
   }
@@ -61,4 +89,4 @@ void ExecuteStep(VMState *vm) {
   Operations::execute[opcode](vm);
 
   vm->pc += offset;
-}
+};

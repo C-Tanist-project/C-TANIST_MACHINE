@@ -12,6 +12,8 @@
 #include <thread>
 #include <variant>
 
+typedef enum { ACC, R0, R1 } Registers;
+
 typedef enum {
   IMMEDIATE,
   DIRECT,
@@ -21,7 +23,7 @@ typedef enum {
 
 typedef enum {
   OP_BR = 0,
-  OP_BROPOS = 1,
+  OP_BRPOS = 1,
   OP_ADD = 2,
   OP_LOAD = 3,
   OP_BRZERO = 4,
@@ -64,14 +66,64 @@ class Operations {
 
   static void InitializeMap() {
     execute[OP_ADD] = &ADD;
+    execute[OP_CALL] = &CALL;
+    execute[OP_COPY] = &COPY;
     execute[OP_SUB] = &SUB;
     execute[OP_MULT] = &MULT;
     execute[OP_DIVIDE] = &DIVIDE;
+    execute[OP_RET] = &RET;
+    execute[OP_STOP] = &STOP;
+    execute[OP_MULT] = &MULT;
+    execute[OP_READ] = &READ;
+    execute[OP_PUSH] = &PUSH;
+    execute[OP_POP] = &POP;
   }
 
-  static void ADD(VMState *vm) {}
+  static void ADD(VMState *vm) {
+    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
+    vm->acc += operand;
+  }
   static void SUB(VMState *vm) {}
-  static void MULT(VMState *vm) {}
-  static void DIVIDE(VMState *vm) {}
+  static void MULT(VMState *vm) {
+    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
+
+    vm->acc *= operand;
+  }
+  static void DIVIDE(VMState *vm) {
+    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
+    vm->acc /= operand;
+  }
+  static void COPY(VMState *vm) {
+    int16_t op1 = FetchValue(vm->memory[vm->pc], 0, vm);
+    int16_t op2 = FetchValue(vm->memory[vm->pc], 0, vm);
+
+    vm->memory[op1] = vm->memory[op2];
+  }
+  static void CALL(VMState *vm) {
+    vm->sp += 1;
+    vm->memory[vm->sp] = vm->pc;
+    vm->pc = vm->memory[vm->pc + 1];
+  }
+  static void RET(VMState *vm) {
+    vm->pc = vm->sp;
+    vm->memory[vm->sp] &= 0;
+    vm->sp -= 1;
+  }
+  static void STOP(VMState *vm) { vm->sigStop = true; }
+  static void READ(VMState *vm) {
+    int16_t input;
+    std::cin >> input;
+  }
+  static void PUSH(VMState *vm) {
+    int16_t *reg = FetchRegister((Registers)vm->memory[vm->pc + 1], vm);
+    vm->sp += 1;
+    vm->memory[vm->sp] = *reg;
+  }
+
+  static void POP(VMState *vm) {
+    int16_t *reg = FetchRegister((Registers)vm->memory[vm->pc + 1], vm);
+    *reg = vm->memory[vm->sp];
+    vm->sp -= 1;
+  }
 };
 #endif  // !H_VM
