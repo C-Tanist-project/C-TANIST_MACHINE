@@ -1,6 +1,6 @@
 #ifndef H_UI
 #define H_UI
-#define USE_STD_FILESYSTEM 1
+#define USE_STD_FILESYSTEM
 
 #include <GLFW/glfw3.h>
 #include <stdio.h>
