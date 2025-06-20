@@ -8,6 +8,8 @@ void RenderMainWindow(GLFWwindow *window) {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+    RenderMemoryEditor();
+
     // Renderização começa aqui
     static bool show_control_window = true;
     RenderControlsWindow(show_control_window);
