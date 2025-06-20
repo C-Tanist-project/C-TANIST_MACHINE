@@ -2,6 +2,7 @@ build/
 .ccls-cache
 .clang-format
 .clangd
+.vscode
 compile_commands.json
 *.ini
 *.exe
