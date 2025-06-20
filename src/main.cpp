@@ -8,7 +8,7 @@ int main() {
 
   VMState *vm = VMStateSetup();
 
-  std::thread engine(VMEngine(), vm);
+  std::thread engine(VMEngine, vm);
 
   GLFWwindow *window = MainWindowSetup(1280, 720, "Pentacle VM");
 
