@@ -3,26 +3,26 @@
 #include "src/ui.hpp"
 
 void RenderMemoryEditor(VMState *vm) {
-  static MemoryEditor mem_edit;
-  mem_edit.PreviewDataType = ImGuiDataType_U16;
+  static MemoryEditor memEdit;
+  memEdit.PreviewDataType = ImGuiDataType_U16;
 
   // Buffer: Vetor sincronizado com as alterações do usuário na interface
   static uint16_t buffer[500];
-  size_t data_size = sizeof(vm->memory);
-  size_t buffer_size = sizeof(buffer);
+  size_t dataSize = sizeof(vm->memory);
+  size_t bufferSize = sizeof(buffer);
 
   static bool initialized = false;
   if (!initialized) {
-    memcpy(buffer, vm->memory, data_size);
+    memcpy(buffer, vm->memory, dataSize);
     initialized = true;
   }
 
-  mem_edit.OptShowOptions = false;
-  mem_edit.OptShowDataPreview = true;
+  memEdit.OptShowOptions = false;
+  memEdit.OptShowDataPreview = true;
 
-  if (mem_edit.Open) {
-    ImGui::Begin("Memory Editor", &mem_edit.Open);
-    mem_edit.DrawContents(buffer, buffer_size);
+  if (memEdit.Open) {
+    ImGui::Begin("Memory Editor", &memEdit.Open);
+    memEdit.DrawContents(buffer, bufferSize);
 
     // Para testar se buffer e data estão funcionando como previsto:
     /*
@@ -40,24 +40,24 @@ void RenderMemoryEditor(VMState *vm) {
     // Salva no vetor da VM as modifiações feitas no buffer
     ImGui::Spacing();
     ImGui::NewLine();
-    ImVec2 button_size = ImVec2(50, 30);
+    ImVec2 buttonSize = ImVec2(50, 30);
     ImVec2 available = ImGui::GetContentRegionAvail();
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - button_size.x);
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + available.y - button_size.y);
-    if (ImGui::Button("Save", button_size)) {
-      memcpy(&vm->memory, buffer, data_size);
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - buttonSize.x);
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + available.y - buttonSize.y);
+    if (ImGui::Button("Save", buttonSize)) {
+      memcpy(&vm->memory, buffer, dataSize);
     }
 
     // Botão LOAD
     // Permite escolher um arquivo e carregar os dados em buffer
-    button_size = ImVec2(50, 30);
+    buttonSize = ImVec2(50, 30);
     available = ImGui::GetContentRegionAvail();
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - button_size.x -
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - buttonSize.x -
                          70);
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + available.y - button_size.y);
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + available.y - buttonSize.y);
     static bool openDialog = false;
 
-    if (ImGui::Button("Load", button_size)) {
+    if (ImGui::Button("Load", buttonSize)) {
       openDialog = true;
     }
 

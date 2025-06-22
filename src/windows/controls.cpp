@@ -1,12 +1,12 @@
 #include "src/ui.hpp"
 
 void RenderControlsWindow(bool &window, VMState *vm) {
-  ImVec2 initial_window_size = ImVec2(350, 200);
-  ImGui::SetNextWindowSize(initial_window_size, ImGuiCond_FirstUseEver);
+  ImVec2 initialWindowSize = ImVec2(350, 200);
+  ImGui::SetNextWindowSize(initialWindowSize, ImGuiCond_FirstUseEver);
 
   if (ImGui::Begin("Controls", &window, ImGuiWindowFlags_None)) {
     ImGui::AlignTextToFramePadding();
-    ImVec2 button_size = ImVec2(40, 20);
+    ImVec2 buttonSize = ImVec2(40, 20);
 
     ImGui::Text("Controls");
     ImGui::Separator();
@@ -14,22 +14,22 @@ void RenderControlsWindow(bool &window, VMState *vm) {
     ImGui::NewLine();
     ImGui::NewLine();
 
-    if (ImGui::Button(">=", button_size)) {
+    if (ImGui::Button(">=", buttonSize)) {
       vm->isHalted = !vm->isHalted;
       std::cout << "Is halted: " << (vm->isHalted ? "true" : "false") << "\n";
     }
     ImGui::SameLine();
-    if (ImGui::Button(">>", button_size)) {
+    if (ImGui::Button(">>", buttonSize)) {
       SkipToEnd();
     }
     ImGui::SameLine();
 
-    float window_width = ImGui::GetWindowSize().x;
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + window_width -
-                         5 * button_size.x);
+    float windowWidth = ImGui::GetWindowSize().x;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + windowWidth -
+                         5 * buttonSize.x);
 
     ImGui::AlignTextToFramePadding();
-    if (ImGui::Button("Step", button_size)) {
+    if (ImGui::Button("Step", buttonSize)) {
       vm->sigStep = !vm->sigStep;
       std::cout << "Stepping...\n";
     }
@@ -37,7 +37,7 @@ void RenderControlsWindow(bool &window, VMState *vm) {
     ImGui::NewLine();
     ImGui::Text("Speed");
 
-    ImGui::PushItemWidth(window_width - 20);
+    ImGui::PushItemWidth(windowWidth - 20);
     static float speed = 0.0f;
     if (ImGui::SliderFloat("##SpeedSlider", &speed, 0.0f, 10.0f, "%.4f",
                            ImGuiSliderFlags_Logarithmic)) {

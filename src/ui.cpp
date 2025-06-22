@@ -13,21 +13,21 @@ void RenderMainWindow(GLFWwindow *window, VMState *vm) {
   ImGui::NewFrame();
 
   // Renderização começa aqui
-  static bool show_control_window = true;
+  static bool showControlWindow = true;
 
   RenderMemoryEditor(vm);
-  RenderControlsWindow(show_control_window, vm);
+  RenderControlsWindow(showControlWindow, vm);
   RenderVMState(vm);
 
   // ImGui::ShowDemoWindow();
 
   ImGui::Render();
 
-  int display_w, display_h;
+  int displayWidth, displayHeight;
 
-  glfwGetFramebufferSize(window, &display_w, &display_h);
+  glfwGetFramebufferSize(window, &displayWidth, &displayHeight);
 
-  glViewport(0, 0, display_w, display_h);
+  glViewport(0, 0, displayWidth, displayHeight);
 
   glClearColor(0.0f, 0.0f, 0.0f, 1.00f);
 
