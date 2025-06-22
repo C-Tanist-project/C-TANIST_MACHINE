@@ -86,9 +86,6 @@ int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState *vm) {
   int16_t rawOperandAddress = vm->pc + operandIdx + 1;
   int16_t rawOperandValue = vm->memory[rawOperandAddress];
 
-  std::cout << rawOperandValue << '\n';
-  std::cout << "Operand Format is: " << operandFormat << '\n';
-
   switch (operandFormat) {
   // case IMMEDIATE:
   //   return rawOperandValue;
@@ -143,27 +140,16 @@ void ExecuteStep(VMState *vm) {
 }
 
 OperationControls PollOperationControls(VMState *vm) {
-  OperationControls received = NONE;
+  if (vm->sigClose.exchange(false))
+    return CLOSE;
+  if (vm->sigStop.exchange(false))
+    return STOP;
+  if (vm->sigFinish.exchange(false))
+    return FINISH;
+  if (vm->sigStep.exchange(false))
+    return STEP;
+  if (vm->sigRun.exchange(false))
+    return RUN;
 
-  if (vm->sigStop)
-    received = STOP;
-  if (vm->sigStep)
-    received = STEP;
-  if (vm->sigRun)
-    received = RUN;
-  if (vm->sigFinish)
-    received = FINISH;
-  if (vm->sigClose)
-    received = CLOSE;
-
-  if (received == NONE) {
-    return NONE;
-  } else {
-    vm->sigStop = false;
-    vm->sigStep = false;
-    vm->sigRun = false;
-    vm->sigFinish = false;
-    vm->sigClose = false;
-    return received;
-  }
+  return NONE;
 }

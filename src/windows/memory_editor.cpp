@@ -4,14 +4,15 @@
 
 void RenderMemoryEditor(VMState *vm) {
   static MemoryEditor memEdit;
-  memEdit.PreviewDataType = ImGuiDataType_U16;
+  memEdit.PreviewDataType = ImGuiDataType_S16;
 
   // Buffer: Vetor sincronizado com as alterações do usuário na interface
-  static uint16_t buffer[500];
+  static int16_t buffer[500];
   size_t dataSize = sizeof(vm->memory);
   size_t bufferSize = sizeof(buffer);
 
   static bool initialized = false;
+
   if (!initialized) {
     memcpy(buffer, vm->memory, dataSize);
     initialized = true;
@@ -21,6 +22,14 @@ void RenderMemoryEditor(VMState *vm) {
   memEdit.OptShowDataPreview = true;
 
   if (memEdit.Open) {
+    {
+      std::lock_guard<std::mutex> lock(vm->mutex);
+      while (!vm->updatedMemoryAddresses.empty()) {
+        int16_t updatedAddress = vm->updatedMemoryAddresses.top();
+        vm->updatedMemoryAddresses.pop();
+        buffer[updatedAddress] = vm->memory[updatedAddress];
+      }
+    }
     ImGui::Begin("Memory Editor", &memEdit.Open);
     memEdit.DrawContents(buffer, bufferSize);
 

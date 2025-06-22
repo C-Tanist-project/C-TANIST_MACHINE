@@ -7,7 +7,6 @@
 #include <iostream>
 #include <map>
 #include <mutex>
-#include <shared_mutex>
 #include <stack>
 #include <syncstream>
 #include <thread>
@@ -48,7 +47,7 @@ typedef struct vmstate {
 
   std::stack<int16_t> updatedMemoryAddresses;
 
-  std::shared_mutex mutex;
+  std::mutex mutex;
 
   std::atomic<bool> sigRun{false}, sigFinish{false}, sigPause{false},
       sigClose{false}, sigStep{false}, sigStop{false}, isHalted{true},
@@ -98,7 +97,6 @@ public:
 
   static void ADD(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
-    std::cout << "Adding " << operand << " to ACC\n";
     vm->acc += operand;
   }
 
@@ -121,13 +119,20 @@ public:
     } else {
       vm->memory[op1] = vm->memory[op2];
     }
-    vm->updatedMemoryAddresses.push(op1);
+
+    {
+      std::lock_guard<std::mutex> lock(vm->mutex);
+      vm->updatedMemoryAddresses.push(op1);
+    }
   }
 
   static void CALL(VMState *vm) {
     vm->sp += 1;
     vm->memory[vm->sp] = vm->pc;
-    vm->updatedMemoryAddresses.push(vm->pc);
+    {
+      std::lock_guard<std::mutex> lock(vm->mutex);
+      vm->updatedMemoryAddresses.push(vm->pc);
+    }
     vm->pc = vm->memory[vm->pc + 1];
   }
 
@@ -136,10 +141,7 @@ public:
     vm->sp -= 1;
   }
 
-  static void STOP(VMState *vm) {
-    vm->isHalted = true;
-    std::cout << "I'm finishing with ACC = " << vm->acc << "\n";
-  }
+  static void STOP(VMState *vm) { vm->isHalted = true; }
 
   static void READ(VMState *vm) {
     int16_t input;
@@ -150,11 +152,19 @@ public:
     int16_t *reg = FetchRegister((Registers)vm->memory[vm->pc + 1], vm);
     vm->sp += 1;
     vm->memory[vm->sp] = *reg;
+    {
+      std::lock_guard<std::mutex> lock(vm->mutex);
+      vm->updatedMemoryAddresses.push(vm->sp);
+    }
   }
 
   static void POP(VMState *vm) {
     int16_t *reg = FetchRegister((Registers)vm->memory[vm->pc + 1], vm);
     *reg = vm->memory[vm->sp];
+    {
+      std::lock_guard<std::mutex> lock(vm->mutex);
+      vm->updatedMemoryAddresses.push(vm->sp);
+    }
     vm->sp -= 1;
   }
 
@@ -185,7 +195,10 @@ public:
   static void STORE(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     vm->memory[operand] = vm->acc;
-    vm->updatedMemoryAddresses.push(operand);
+    {
+      std::lock_guard<std::mutex> lock(vm->mutex);
+      vm->updatedMemoryAddresses.push(operand);
+    }
   }
 
   static void WRITE(VMState *vm) {
