@@ -67,6 +67,8 @@ void RenderMemoryEditor(VMState *vm) {
       ImGuiFileDialog::Instance()->OpenDialog(
           "TxtMemoryDialog", "Escolha o arquivo de memória (.txt)", ".txt",
           config);
+      ImVec2 initialWindowSize = ImVec2(700, 500);
+      ImGui::SetNextWindowSize(initialWindowSize, ImGuiCond_FirstUseEver);
     }
     // Depois que o caminho for preenchido
     static std::string currentPath;

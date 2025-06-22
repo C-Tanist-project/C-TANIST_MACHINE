@@ -98,14 +98,17 @@ public:
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     vm->acc += operand;
   }
+
   static void MULT(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     vm->acc *= operand;
   }
+
   static void DIVIDE(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     vm->acc /= operand;
   }
+
   static void COPY(VMState *vm) {
     int16_t op1 = FetchValue(vm->memory[vm->pc], 0, vm);
     int16_t op2 = FetchValue(vm->memory[vm->pc], 1, vm);
@@ -117,24 +120,29 @@ public:
     }
     vm->updatedMemoryAddresses.push(op1);
   }
+
   static void CALL(VMState *vm) {
     vm->sp += 1;
     vm->memory[vm->sp] = vm->pc;
     vm->updatedMemoryAddresses.push(vm->pc);
     vm->pc = vm->memory[vm->pc + 1];
   }
+
   static void RET(VMState *vm) {
     vm->pc = vm->sp;
     vm->sp -= 1;
   }
+
   static void STOP(VMState *vm) {
     vm->sigRun = false;
     vm->sigStop = true;
   }
+
   static void READ(VMState *vm) {
     int16_t input;
     std::cin >> input;
   }
+
   static void PUSH(VMState *vm) {
     int16_t *reg = FetchRegister((Registers)vm->memory[vm->pc + 1], vm);
     vm->sp += 1;
@@ -146,10 +154,12 @@ public:
     *reg = vm->memory[vm->sp];
     vm->sp -= 1;
   }
+
   static void BR(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     vm->pc = operand;
   }
+
   static void BRPOS(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     if (vm->acc > 0) {
@@ -158,23 +168,28 @@ public:
       vm->pc += 2;
     }
   }
+
   static void SUB(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     vm->acc -= vm->memory[operand];
   }
+
   static void LOAD(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     vm->acc = vm->memory[operand];
   }
+
   static void STORE(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     vm->memory[operand] = vm->acc;
     vm->updatedMemoryAddresses.push(operand);
   }
+
   static void WRITE(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     std::cout << "Output: " << operand << std::endl;
   }
+
   static void BRZERO(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     if (vm->acc == 0) {
@@ -183,6 +198,7 @@ public:
       vm->pc += 2;
     }
   }
+
   static void BRNEG(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     if (vm->acc < 0) {
