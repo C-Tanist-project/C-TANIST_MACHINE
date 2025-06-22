@@ -61,7 +61,6 @@ GLFWwindow *MainWindowSetup(const int width, const int height,
   glfwSwapInterval(1); // vsync
 
   return window;
-  return window;
 }
 
 void GLFWErrorCallback(int error, const char *description) {
@@ -85,7 +84,6 @@ void IMGUIsetup(GLFWwindow *window) {
 
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-  ImGui::StyleColorsDark();
   ImGui::StyleColorsDark();
 
   ImGui_ImplGlfw_InitForOpenGL(window, true);

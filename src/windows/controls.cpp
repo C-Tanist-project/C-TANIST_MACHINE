@@ -20,7 +20,7 @@ void RenderControlsWindow(bool &window, VMState *vm) {
     }
     ImGui::SameLine();
     if (ImGui::Button(">>", buttonSize)) {
-      SkipToEnd();
+      SkipToEnd(vm);
     }
     ImGui::SameLine();
 
@@ -49,4 +49,9 @@ void RenderControlsWindow(bool &window, VMState *vm) {
   ImGui::End();
 }
 
-void SkipToEnd() { std::cout << "Skipping to the end of the program...\n"; }
+void SkipToEnd(VMState *vm) {
+  if (vm->isHalted) {
+    std::cout << "Skipping to the end of the program...\n";
+    vm->sigFinish = true;
+  }
+}

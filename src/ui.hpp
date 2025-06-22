@@ -18,6 +18,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "vm.hpp"
+
 void GLFWErrorCallback(int error, const char *description);
 GLFWwindow *MainWindowSetup(const int width, const int height,
                             const char *title);
@@ -27,6 +28,6 @@ void RenderMainWindow(GLFWwindow *window, VMState *vm);
 void RenderControlsWindow(bool &window, VMState *vm);
 void RenderVMState(VMState *vm);
 void WindowCleanup(GLFWwindow *window);
-void SkipToEnd();
+void SkipToEnd(VMState *vm);
 
 #endif // !H_UI

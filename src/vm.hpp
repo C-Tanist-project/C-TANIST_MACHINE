@@ -13,9 +13,11 @@
 #include <thread>
 #include <variant>
 
+typedef enum { FINISH, RUN, STEP, STOP, CLOSE, NONE } OperationControls;
+
 typedef enum { ACC, R0, R1 } Registers;
 
-typedef enum { IMMEDIATE, DIRECT, INDIRECT } OperandFormat;
+typedef enum { IMMEDIATE = 0, DIRECT = 1, INDIRECT = 2 } OperandFormat;
 
 typedef enum {
   OP_BR = 0,
@@ -48,9 +50,9 @@ typedef struct vmstate {
 
   std::shared_mutex mutex;
 
-  std::atomic<bool> sigRun{false}, sigRunContinuous{false}, sigStep{false},
-      sigPause{false}, sigStop{true}, isHalted{false}, hasError{false};
-
+  std::atomic<bool> sigRun{false}, sigFinish{false}, sigPause{false},
+      sigClose{false}, sigStep{false}, sigStop{false}, isHalted{true},
+      isRunning{false}, hasError{false};
 } VMState;
 
 VMState *VMStateSetup();
@@ -96,6 +98,7 @@ public:
 
   static void ADD(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
+    std::cout << "Adding " << operand << " to ACC\n";
     vm->acc += operand;
   }
 
@@ -134,8 +137,8 @@ public:
   }
 
   static void STOP(VMState *vm) {
-    vm->sigRun = false;
-    vm->sigStop = true;
+    vm->isHalted = true;
+    std::cout << "I'm finishing with ACC = " << vm->acc << "\n";
   }
 
   static void READ(VMState *vm) {
@@ -209,4 +212,7 @@ public:
   }
 };
 
+OperationControls PollOperationControls(VMState *vm);
+void VMEngine(VMState *vm);
+void ExecuteStep(VMState *vm);
 #endif // !H_VM

@@ -2,6 +2,27 @@
 
 std::map<Opcode, Operations::OpFunc> Operations::execute;
 
+void VMEngine(VMState *vm) {
+  while (vm->isHalted) {
+    switch (PollOperationControls(vm)) {
+    case FINISH:
+      vm->isHalted = false;
+      while (!vm->isHalted) {
+        ExecuteStep(vm);
+        if (PollOperationControls(vm) == CLOSE)
+          break;
+      }
+      break;
+    case CLOSE:
+      std::cout << "bye bye!\n";
+      return;
+    default:
+      std::this_thread::yield();
+      break;
+    }
+  }
+}
+
 VMState *VMStateSetup() {
   VMState *vm = new VMState;
 
@@ -25,7 +46,8 @@ OperandFormat DecodeOperandFormat(int16_t instruction,
   OperandFormat operandFormat = indirectSwitch ? INDIRECT : DIRECT;
 
   bool immediateSwitch = instruction & (1 << 7);
-  if (immediateSwitch)
+
+  if (!immediateSwitch)
     return operandFormat;
 
   switch (opcode) {
@@ -39,6 +61,7 @@ OperandFormat DecodeOperandFormat(int16_t instruction,
   case OP_SUB:
   case OP_WRITE:
     return IMMEDIATE;
+    break;
   default:
     return operandFormat;
   }
@@ -63,6 +86,9 @@ int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState *vm) {
   int16_t rawOperandAddress = vm->pc + operandIdx + 1;
   int16_t rawOperandValue = vm->memory[rawOperandAddress];
 
+  std::cout << rawOperandValue << '\n';
+  std::cout << "Operand Format is: " << operandFormat << '\n';
+
   switch (operandFormat) {
   // case IMMEDIATE:
   //   return rawOperandValue;
@@ -71,7 +97,7 @@ int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState *vm) {
   case INDIRECT:
     return vm->memory[vm->memory[rawOperandValue]];
   default:
-    return rawOperandAddress;
+    return rawOperandValue;
   }
 }
 
@@ -116,8 +142,28 @@ void ExecuteStep(VMState *vm) {
   vm->pc += offset;
 }
 
-void VMEngine(VMState *vm) {
-  while (!(vm->sigPause) && !(vm->sigStop)) {
-    ExecuteStep(vm);
+OperationControls PollOperationControls(VMState *vm) {
+  OperationControls received = NONE;
+
+  if (vm->sigStop)
+    received = STOP;
+  if (vm->sigStep)
+    received = STEP;
+  if (vm->sigRun)
+    received = RUN;
+  if (vm->sigFinish)
+    received = FINISH;
+  if (vm->sigClose)
+    received = CLOSE;
+
+  if (received == NONE) {
+    return NONE;
+  } else {
+    vm->sigStop = false;
+    vm->sigStep = false;
+    vm->sigRun = false;
+    vm->sigFinish = false;
+    vm->sigClose = false;
+    return received;
   }
 }

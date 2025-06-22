@@ -11,6 +11,7 @@ int main(int argc, char *argv[]) {
   VMState *vm = VMStateSetup();
 
   std::ifstream file(argv[1], std::ios::binary);
+
   if (!file) {
     std::cerr << "Error opening file!\n";
     return 1;
@@ -18,11 +19,10 @@ int main(int argc, char *argv[]) {
 
   int16_t instructionsMemoryAddress = 32;
 
-  unsigned char buffer[2];
+  int16_t buffer;
 
-  while (file.read(reinterpret_cast<char *>(buffer), sizeof(buffer))) {
-    u_int16_t word = (buffer[0] << 8) | (buffer[1]);
-    vm->memory[instructionsMemoryAddress] = word;
+  while (file.read(reinterpret_cast<char *>(&buffer), sizeof(buffer))) {
+    vm->memory[instructionsMemoryAddress] = buffer;
     ++instructionsMemoryAddress;
   }
 
@@ -35,12 +35,15 @@ int main(int argc, char *argv[]) {
     std::cout << vm->memory[i] << " ";
   }
 
+  std::cout << std::endl;
+
   while (!glfwWindowShouldClose(window)) {
-    std::unique_lock lock(vm->mutex);
     RenderMainWindow(window, vm);
-    lock.unlock();
   }
+
+  vm->sigClose = true;
   engine.join();
+
   WindowCleanup(window);
 
   return 0;
