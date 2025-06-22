@@ -23,10 +23,10 @@ GLFWwindow *MainWindowSetup(const int width, const int height,
                             const char *title);
 void IMGUIsetup(GLFWwindow *window);
 void RenderMemoryEditor(VMState *vm_state);
-void RenderMainWindow(GLFWwindow *window, VMState *vm_state);
-void RenderControlsWindow(bool &window, VMState *vm_state);
-void RenderVMState(VMState *vm_state);
+void RenderMainWindow(GLFWwindow *window, VMState *vm);
+void RenderControlsWindow(bool &window, VMState *vm);
+void RenderVMState(VMState *vm);
 void WindowCleanup(GLFWwindow *window);
 void SkipToEnd();
 
-#endif  // !H_UI
+#endif // !H_UI

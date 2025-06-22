@@ -3,105 +3,104 @@
 #include "vm.hpp"
 
 // INSERIR OS WIDGETS DE VOCÊS AQUI!!!
-void RenderMainWindow(GLFWwindow *window, VMState *vm_state) {
-    glfwPollEvents();
+void RenderMainWindow(GLFWwindow *window, VMState *vm) {
+  glfwPollEvents();
 
-    ImGui_ImplOpenGL3_NewFrame();
+  ImGui_ImplOpenGL3_NewFrame();
 
-    ImGui_ImplGlfw_NewFrame();
+  ImGui_ImplGlfw_NewFrame();
 
-    ImGui::NewFrame();
+  ImGui::NewFrame();
 
-    // Renderização começa aqui
-    static bool show_control_window = true;
+  // Renderização começa aqui
+  static bool show_control_window = true;
 
-    RenderMemoryEditor(vm_state);
-    RenderControlsWindow(show_control_window, vm_state);
-    RenderVMState(vm_state);
+  RenderMemoryEditor(vm);
+  RenderControlsWindow(show_control_window, vm);
+  RenderVMState(vm);
 
-    // ImGui::ShowDemoWindow();
+  // ImGui::ShowDemoWindow();
 
-    ImGui::Render();
+  ImGui::Render();
 
-    int display_w, display_h;
+  int display_w, display_h;
 
-    glfwGetFramebufferSize(window, &display_w, &display_h);
+  glfwGetFramebufferSize(window, &display_w, &display_h);
 
-    glViewport(0, 0, display_w, display_h);
+  glViewport(0, 0, display_w, display_h);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.00f);
+  glClearColor(0.0f, 0.0f, 0.0f, 1.00f);
 
-    glClear(GL_COLOR_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT);
 
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    glfwSwapBuffers(window);
+  glfwSwapBuffers(window);
 }
 
 GLFWwindow *MainWindowSetup(const int width, const int height,
                             const char *title) {
-    glfwSetErrorCallback(GLFWErrorCallback);
+  glfwSetErrorCallback(GLFWErrorCallback);
 
-    if (!glfwInit()) {
-        perror("GLFW Error callback failed.");
+  if (!glfwInit()) {
+    perror("GLFW Error callback failed.");
 
-        exit(EXIT_FAILURE);
-    }
+    exit(EXIT_FAILURE);
+  }
 
-    GLFWwindow *window =
-        glfwCreateWindow(width, height, title, nullptr, nullptr);
+  GLFWwindow *window = glfwCreateWindow(width, height, title, nullptr, nullptr);
 
-    if (window == nullptr) {
-        perror("GLFW Window Setup failed.");
+  if (window == nullptr) {
+    perror("GLFW Window Setup failed.");
 
-        exit(EXIT_FAILURE);
-    }
+    exit(EXIT_FAILURE);
+  }
 
-    glfwMakeContextCurrent(window);
+  glfwMakeContextCurrent(window);
 
-    glfwSwapInterval(1);  // vsync
+  glfwSwapInterval(1); // vsync
 
-    return window;
-    return window;
+  return window;
+  return window;
 }
 
 void GLFWErrorCallback(int error, const char *description) {
-    fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+  fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
 void IMGUIsetup(GLFWwindow *window) {
-    const char *glsl_version = "#version 130";
+  const char *glsl_version = "#version 130";
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    IMGUI_CHECKVERSION();
+  IMGUI_CHECKVERSION();
 
-    ImGui::CreateContext();
+  ImGui::CreateContext();
 
-    ImGuiIO &io = ImGui::GetIO();
+  ImGuiIO &io = ImGui::GetIO();
 
-    (void)io;
+  (void)io;
 
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-    ImGui::StyleColorsDark();
-    ImGui::StyleColorsDark();
+  ImGui::StyleColorsDark();
+  ImGui::StyleColorsDark();
 
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+  ImGui_ImplGlfw_InitForOpenGL(window, true);
 
-    ImGui_ImplOpenGL3_Init(glsl_version);
+  ImGui_ImplOpenGL3_Init(glsl_version);
 }
 
 void WindowCleanup(GLFWwindow *window) {
-    ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplOpenGL3_Shutdown();
 
-    ImGui_ImplGlfw_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
 
-    ImGui::DestroyContext();
+  ImGui::DestroyContext();
 
-    glfwDestroyWindow(window);
+  glfwDestroyWindow(window);
 
-    glfwTerminate();
+  glfwTerminate();
 }
