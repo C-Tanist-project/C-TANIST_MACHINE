@@ -8,21 +8,10 @@
 #include <map>
 #include <mutex>
 #include <shared_mutex>
+#include <stack>
 #include <syncstream>
 #include <thread>
 #include <variant>
-
-typedef struct vmstate {
-  int16_t memory[500];
-
-  int16_t pc, sp, acc, mop, ri, re, r0, r1;
-
-  std::shared_mutex mutex;
-
-  std::atomic<bool> sigRun{false}, sigRunContinuous{false}, sigStep{false},
-      sigPause{false}, sigStop{true}, isHalted{false}, hasError{false};
-
-} VMState;
 
 typedef enum { ACC, R0, R1 } Registers;
 
@@ -50,6 +39,20 @@ typedef enum {
   OP_POP = 18,
 } Opcode;
 
+typedef struct vmstate {
+  int16_t memory[500];
+
+  int16_t pc, sp, acc, mop, ri, re, r0, r1;
+
+  std::stack<int16_t> updatedMemoryAddresses;
+
+  std::shared_mutex mutex;
+
+  std::atomic<bool> sigRun{false}, sigRunContinuous{false}, sigStep{false},
+      sigPause{false}, sigStop{true}, isHalted{false}, hasError{false};
+
+} VMState;
+
 VMState *VMStateSetup();
 
 OperandFormat DecodeOperandFormat(int16_t instruction,
@@ -62,7 +65,7 @@ int16_t *FetchRegister(Registers operandIdx, VMState *vm);
 int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState *vm);
 
 class Operations {
- public:
+public:
   // um map de Opcodes direto em ponteiros de funções :O
   // MAIN CHAMA INITIALIZEMAP pra construir o map estático
   // no final isso aqui é só um hashmap elegante
@@ -97,7 +100,6 @@ class Operations {
   }
   static void MULT(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
-
     vm->acc *= operand;
   }
   static void DIVIDE(VMState *vm) {
@@ -106,18 +108,23 @@ class Operations {
   }
   static void COPY(VMState *vm) {
     int16_t op1 = FetchValue(vm->memory[vm->pc], 0, vm);
-    int16_t op2 = FetchValue(vm->memory[vm->pc], 0, vm);
+    int16_t op2 = FetchValue(vm->memory[vm->pc], 1, vm);
 
-    vm->memory[op1] = vm->memory[op2];
+    if (DecodeOperandFormat(vm->memory[vm->pc], 1) == IMMEDIATE) {
+      vm->memory[op1] = op2;
+    } else {
+      vm->memory[op1] = vm->memory[op2];
+    }
+    vm->updatedMemoryAddresses.push(op1);
   }
   static void CALL(VMState *vm) {
     vm->sp += 1;
     vm->memory[vm->sp] = vm->pc;
+    vm->updatedMemoryAddresses.push(vm->pc);
     vm->pc = vm->memory[vm->pc + 1];
   }
   static void RET(VMState *vm) {
     vm->pc = vm->sp;
-    vm->memory[vm->sp] &= 0;
     vm->sp -= 1;
   }
   static void STOP(VMState *vm) {
@@ -159,7 +166,11 @@ class Operations {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     vm->acc = vm->memory[operand];
   }
-  static void STORE(VMState *vm) { vm->memory[vm->pc] = vm->acc; }
+  static void STORE(VMState *vm) {
+    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
+    vm->memory[operand] = vm->acc;
+    vm->updatedMemoryAddresses.push(operand);
+  }
   static void WRITE(VMState *vm) {
     int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
     std::cout << "Output: " << operand << std::endl;
@@ -182,4 +193,4 @@ class Operations {
   }
 };
 
-#endif  // !H_VM
+#endif // !H_VM
