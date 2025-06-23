@@ -4,7 +4,9 @@
 
 void RenderMemoryEditor(VMState &vm) {
   static MemoryEditor memEdit;
-  memEdit.PreviewDataType = ImGuiDataType_S16;
+  // memEdit.PreviewDataType = ImGuiDataType_S16;
+  static std::filesystem::path currentPath;
+  static bool openDialog = false;
 
   // Buffer: Vetor sincronizado com as alterações do usuário na interface
   static int16_t buffer[500];
@@ -20,6 +22,9 @@ void RenderMemoryEditor(VMState &vm) {
 
   memEdit.OptShowOptions = false;
   memEdit.OptShowDataPreview = true;
+  memEdit.OptMidColsCount = 0;
+  memEdit.Cols = 8;
+  memEdit.OptFooterExtraHeight = 70.0;
 
   if (memEdit.Open) {
     {
@@ -30,8 +35,11 @@ void RenderMemoryEditor(VMState &vm) {
         buffer[updatedAddress] = vm.memory[updatedAddress];
       }
     }
+    // memEdit.DrawWindow("Mem Edit", buffer, bufferSize);
     ImGui::Begin("Memory Editor", &memEdit.Open);
     memEdit.DrawContents(buffer, bufferSize);
+
+    ImGui::Separator();
 
     // Para testar se buffer e data estão funcionando como previsto:
     /*
@@ -47,8 +55,13 @@ void RenderMemoryEditor(VMState &vm) {
 
     // Botão SAVE
     // Salva no vetor da VM as modifiações feitas no buffer
-    ImGui::Spacing();
-    ImGui::NewLine();
+    ImGui::BeginChild("##LoadnSave");
+
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("Arquivo selecionado:");
+    ImGui::SameLine();
+    ImGui::Text("%s", currentPath.filename().c_str());
+
     ImVec2 buttonSize = ImVec2(50, 30);
     ImVec2 available = ImGui::GetContentRegionAvail();
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - buttonSize.x);
@@ -59,55 +72,62 @@ void RenderMemoryEditor(VMState &vm) {
 
     // Botão LOAD
     // Permite escolher um arquivo e carregar os dados em buffer
-    buttonSize = ImVec2(50, 30);
+
     available = ImGui::GetContentRegionAvail();
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - buttonSize.x -
                          70);
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + available.y - buttonSize.y);
-    static bool openDialog = false;
-
     if (ImGui::Button("Load", buttonSize)) {
       openDialog = true;
     }
+
+    ImGui::EndChild();
+    ImGui::End();
 
     if (openDialog) {
       IGFD::FileDialogConfig config;
       config.path = ".";
       ImGuiFileDialog::Instance()->OpenDialog(
-          "TxtMemoryDialog", "Escolha o arquivo de memória (.txt)", ".txt",
-          config);
+          "TxtMemoryDialog", "Escolha o arquivo de memória (.txt) (.bin)",
+          "Text and Binary{.txt,.bin}", config);
       ImVec2 initialWindowSize = ImVec2(700, 500);
       ImGui::SetNextWindowSize(initialWindowSize, ImGuiCond_FirstUseEver);
     }
-    // Depois que o caminho for preenchido
-    static std::string currentPath;
+
     if (ImGuiFileDialog::Instance()->Display("TxtMemoryDialog")) {
       if (ImGuiFileDialog::Instance()->IsOk()) {
         std::string filePathName;
-        std::string filePath;
         filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-        filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+        currentPath.assign(filePathName);
 
-        FILE *f = fopen(filePathName.c_str(), "r");
-        if (f) {
+        if (currentPath.extension().string() == ".txt") {
+          std::ifstream file(currentPath, std::ios::in);
           int16_t value;
           int i = 0;
-          while (fscanf(f, "%hd", &value) == 1) {
-            buffer[i] = (int16_t)value;
+
+          while (file >> value && i < 500) {
+            buffer[i] = value;
             i++;
           }
-          fclose(f);
-        } else {
-          std::cout << "Erro ao abrir o arquivo: " << currentPath << "\n";
-          perror("Erro ao abrir o arquivo.");
+          file.close();
         }
-        currentPath = filePathName;
       }
+
+      if (currentPath.extension().string() == ".bin") {
+        std::ifstream file(currentPath, std::ios::in | std::ios::binary);
+        int16_t value;
+        int i = 0;
+
+        while (file.read(reinterpret_cast<char *>(&value), sizeof(int16_t)) &&
+               i < 500) {
+          buffer[i] = value;
+          i++;
+        }
+        file.close();
+      }
+
       ImGuiFileDialog::Instance()->Close();
       openDialog = false;
     }
-    ImGui::Text("Arquivo selecionado:");
-    ImGui::Text("%s", currentPath.c_str());
-    ImGui::End();
   }
 }

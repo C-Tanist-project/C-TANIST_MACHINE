@@ -51,7 +51,7 @@ typedef struct vmstatestruct {
   std::mutex mutex;
 
   std::atomic<bool> sigRun{false}, sigFinish{false}, sigPause{false},
-      sigClose{false}, sigStep{false}, sigStop{false}, isHalted{true},
+      sigClose{false}, sigStep{false}, sigStop{false}, isHalted{false},
       isRunning{false}, hasError{false};
 } VMState;
 
@@ -128,13 +128,14 @@ public:
   }
 
   static void CALL(VMState &vm) {
+    int16_t op1 = FetchValue(vm.memory[vm.pc], 0, vm);
     vm.sp += 1;
     vm.memory[vm.sp] = vm.pc;
     {
       std::lock_guard<std::mutex> lock(vm.mutex);
-      vm.updatedMemoryAddresses.push(vm.pc);
+      vm.updatedMemoryAddresses.push(vm.sp);
     }
-    vm.pc = vm.memory[vm.pc + 1];
+    vm.pc = op1;
   }
 
   static void RET(VMState &vm) {
@@ -229,9 +230,9 @@ public:
 };
 
 class VMEngine {
-  std::condition_variable conditionVariable;
-  std::mutex mutex;
-  std::atomic<bool> hasNewCommand{false};
+  static inline std::condition_variable conditionVariable;
+  std::mutex mutexEngine;
+  static inline std::atomic<bool> hasNewCommand{false};
 
 public:
   void Run(VMState &vm) {
@@ -262,13 +263,14 @@ public:
         ExecuteStep(vm);
         stepReady = false;
       } else {
-        std::unique_lock<std::mutex> lock(mutex);
+        std::unique_lock<std::mutex> lock(mutexEngine);
         conditionVariable.wait_for(lock, std::chrono::milliseconds(16));
       }
     }
   }
 
-  void NotifyCommand() {
+  static void NotifyCommand() {
+    std::cout << "Received!\n";
     hasNewCommand = true;
     conditionVariable.notify_one();
   }

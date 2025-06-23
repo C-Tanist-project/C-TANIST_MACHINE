@@ -59,9 +59,11 @@ int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState &vm) {
   int16_t rawOperandAddress = vm.pc + operandIdx + 1;
   int16_t rawOperandValue = vm.memory[rawOperandAddress];
 
+  std::cout << "RawOperandValue = " << rawOperandValue << "\n";
+
   switch (operandFormat) {
-  // case IMMEDIATE:
-  //   return rawOperandValue;
+  case IMMEDIATE:
+    return rawOperandValue;
   case DIRECT:
     return vm.memory[rawOperandValue];
   case INDIRECT:
