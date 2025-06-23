@@ -23,11 +23,11 @@ void GLFWErrorCallback(int error, const char *description);
 GLFWwindow *MainWindowSetup(const int width, const int height,
                             const char *title);
 void IMGUIsetup(GLFWwindow *window);
-void RenderMemoryEditor(VMState *vm_state);
-void RenderMainWindow(GLFWwindow *window, VMState *vm);
-void RenderControlsWindow(bool &window, VMState *vm);
-void RenderVMState(VMState *vm);
+void RenderMemoryEditor(VMState &vm_state);
+void RenderMainWindow(GLFWwindow *window, VMState &vm);
+void RenderControlsWindow(bool &window, VMState &vm);
+void RenderVMState(VMState &vm);
 void WindowCleanup(GLFWwindow *window);
-void SkipToEnd(VMState *vm);
+void SkipToEnd(VMState &vm);
 
 #endif // !H_UI

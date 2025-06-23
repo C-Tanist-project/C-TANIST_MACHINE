@@ -1,41 +1,14 @@
 #include "vm.hpp"
 
-std::map<Opcode, Operations::OpFunc> Operations::execute;
-
-void VMEngine(VMState *vm) {
-  while (vm->isHalted) {
-    switch (PollOperationControls(vm)) {
-    case FINISH:
-      vm->isHalted = false;
-      while (!vm->isHalted) {
-        ExecuteStep(vm);
-        if (PollOperationControls(vm) == CLOSE)
-          break;
-      }
-      break;
-    case CLOSE:
-      std::cout << "bye bye!\n";
-      return;
-    default:
-      std::this_thread::yield();
-      break;
-    }
-  }
-}
-
-VMState *VMStateSetup() {
-  VMState *vm = new VMState;
-
-  vm->pc = 32;
-  vm->sp = 0;
-  vm->acc = 0;
-  vm->mop = 0;
-  vm->ri = 0;
-  vm->re = 0;
-  vm->r0 = 0;
-  vm->r1 = 0;
-
-  return vm;
+void VMStateSetup(VMState &vm) {
+  vm.pc = 32;
+  vm.sp = 0;
+  vm.acc = 0;
+  vm.mop = 0;
+  vm.ri = 0;
+  vm.re = 0;
+  vm.r0 = 0;
+  vm.r1 = 0;
 }
 
 OperandFormat DecodeOperandFormat(int16_t instruction,
@@ -67,41 +40,41 @@ OperandFormat DecodeOperandFormat(int16_t instruction,
   }
 }
 
-int16_t *FetchRegister(Registers operandIdx, VMState *vm) {
+int16_t *FetchRegister(Registers operandIdx, VMState &vm) {
   switch (operandIdx) {
   // case ACC:
-  //   return &(vm->acc);
+  //   return &(vm.acc);
   //   break;
   case R0:
-    return &(vm->r0);
+    return &(vm.r0);
   case R1:
-    return &(vm->r1);
+    return &(vm.r1);
   default:
-    return &(vm->acc);
+    return &(vm.acc);
   }
 }
 
-int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState *vm) {
+int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState &vm) {
   OperandFormat operandFormat = DecodeOperandFormat(instruction, operandIdx);
-  int16_t rawOperandAddress = vm->pc + operandIdx + 1;
-  int16_t rawOperandValue = vm->memory[rawOperandAddress];
+  int16_t rawOperandAddress = vm.pc + operandIdx + 1;
+  int16_t rawOperandValue = vm.memory[rawOperandAddress];
 
   switch (operandFormat) {
   // case IMMEDIATE:
   //   return rawOperandValue;
   case DIRECT:
-    return vm->memory[rawOperandValue];
+    return vm.memory[rawOperandValue];
   case INDIRECT:
-    return vm->memory[vm->memory[rawOperandValue]];
+    return vm.memory[vm.memory[rawOperandValue]];
   default:
     return rawOperandValue;
   }
 }
 
-void ExecuteStep(VMState *vm) {
+void ExecuteStep(VMState &vm) {
   unsigned char offset = 0;
 
-  int16_t instruction = vm->memory[vm->pc];
+  int16_t instruction = vm.memory[vm.pc];
 
   Opcode opcode = (Opcode)((instruction & 31) % 19);
 
@@ -119,15 +92,15 @@ void ExecuteStep(VMState *vm) {
     offset = 1;
     break;
   case OP_PUSH:
-    if (vm->sp == 31) {
-      vm->pc = 0;
-      vm->sigPause = true;
+    if (vm.sp == 31) {
+      vm.pc = 0;
+      vm.sigPause = true;
       return;
     }
   case OP_POP:
-    if (vm->sp == 2) {
-      vm->pc = 0;
-      vm->sigPause = true;
+    if (vm.sp == 2) {
+      vm.pc = 0;
+      vm.sigPause = true;
       return;
     }
   default:
@@ -136,19 +109,19 @@ void ExecuteStep(VMState *vm) {
 
   Operations::execute[opcode](vm);
 
-  vm->pc += offset;
+  vm.pc += offset;
 }
 
-OperationControls PollOperationControls(VMState *vm) {
-  if (vm->sigClose.exchange(false))
+OperationControls PollOperationControls(VMState &vm) {
+  if (vm.sigClose.exchange(false))
     return CLOSE;
-  if (vm->sigStop.exchange(false))
+  if (vm.sigStop.exchange(false))
     return STOP;
-  if (vm->sigFinish.exchange(false))
+  if (vm.sigFinish.exchange(false))
     return FINISH;
-  if (vm->sigStep.exchange(false))
+  if (vm.sigStep.exchange(false))
     return STEP;
-  if (vm->sigRun.exchange(false))
+  if (vm.sigRun.exchange(false))
     return RUN;
 
   return NONE;

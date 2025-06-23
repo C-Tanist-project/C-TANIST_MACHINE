@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <iostream>
 #include <map>
@@ -40,8 +41,8 @@ typedef enum {
   OP_POP = 18,
 } Opcode;
 
-typedef struct vmstate {
-  int16_t memory[500];
+typedef struct vmstatestruct {
+  int16_t memory[500] = {0};
 
   int16_t pc, sp, acc, mop, ri, re, r0, r1;
 
@@ -54,25 +55,24 @@ typedef struct vmstate {
       isRunning{false}, hasError{false};
 } VMState;
 
-VMState *VMStateSetup();
+void ExecuteStep(VMState &vm);
+void VMStateSetup(VMState &vm);
+
+int16_t *FetchRegister(Registers operandIdx, VMState &vm);
+
+int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState &vm);
+VMState &vmStateSetup();
 
 OperandFormat DecodeOperandFormat(int16_t instruction,
                                   unsigned char operandIdx);
-
-void VMEngine(VMState *vm);
-
-int16_t *FetchRegister(Registers operandIdx, VMState *vm);
-
-int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState *vm);
+OperationControls PollOperationControls(VMState &vm);
 
 class Operations {
 public:
-  // um map de Opcodes direto em ponteiros de funções :O
-  // MAIN CHAMA INITIALIZEMAP pra construir o map estático
-  // no final isso aqui é só um hashmap elegante
-  using OpFunc = void (*)(VMState *);
+  using OpFunc = void (*)(VMState &);
+  friend class VMEngine;
 
-  static std::map<Opcode, OpFunc> execute;
+  static inline std::map<Opcode, OpFunc> execute;
 
   static void InitializeMap() {
     execute[OP_BR] = &BR;
@@ -95,137 +95,183 @@ public:
     execute[OP_POP] = &POP;
   }
 
-  static void ADD(VMState *vm) {
-    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
-    vm->acc += operand;
+  static void ADD(VMState &vm) {
+    int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
+    vm.acc += operand;
+    std::cout << "Somando " << operand << " ao ACC\n";
   }
 
-  static void MULT(VMState *vm) {
-    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
-    vm->acc *= operand;
+  static void MULT(VMState &vm) {
+    int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
+    vm.acc *= operand;
   }
 
-  static void DIVIDE(VMState *vm) {
-    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
-    vm->acc /= operand;
+  static void DIVIDE(VMState &vm) {
+    int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
+    vm.acc /= operand;
   }
 
-  static void COPY(VMState *vm) {
-    int16_t op1 = FetchValue(vm->memory[vm->pc], 0, vm);
-    int16_t op2 = FetchValue(vm->memory[vm->pc], 1, vm);
+  static void COPY(VMState &vm) {
+    int16_t op1 = FetchValue(vm.memory[vm.pc], 0, vm);
+    int16_t op2 = FetchValue(vm.memory[vm.pc], 1, vm);
 
-    if (DecodeOperandFormat(vm->memory[vm->pc], 1) == IMMEDIATE) {
-      vm->memory[op1] = op2;
+    if (DecodeOperandFormat(vm.memory[vm.pc], 1) == IMMEDIATE) {
+      vm.memory[op1] = op2;
     } else {
-      vm->memory[op1] = vm->memory[op2];
+      vm.memory[op1] = vm.memory[op2];
     }
 
     {
-      std::lock_guard<std::mutex> lock(vm->mutex);
-      vm->updatedMemoryAddresses.push(op1);
+      std::lock_guard<std::mutex> lock(vm.mutex);
+      vm.updatedMemoryAddresses.push(op1);
     }
   }
 
-  static void CALL(VMState *vm) {
-    vm->sp += 1;
-    vm->memory[vm->sp] = vm->pc;
+  static void CALL(VMState &vm) {
+    vm.sp += 1;
+    vm.memory[vm.sp] = vm.pc;
     {
-      std::lock_guard<std::mutex> lock(vm->mutex);
-      vm->updatedMemoryAddresses.push(vm->pc);
+      std::lock_guard<std::mutex> lock(vm.mutex);
+      vm.updatedMemoryAddresses.push(vm.pc);
     }
-    vm->pc = vm->memory[vm->pc + 1];
+    vm.pc = vm.memory[vm.pc + 1];
   }
 
-  static void RET(VMState *vm) {
-    vm->pc = vm->sp;
-    vm->sp -= 1;
+  static void RET(VMState &vm) {
+    vm.pc = vm.sp;
+    vm.sp -= 1;
   }
 
-  static void STOP(VMState *vm) { vm->isHalted = true; }
+  static void STOP(VMState &vm) { vm.isHalted = true; }
 
-  static void READ(VMState *vm) {
+  static void READ(VMState &vm) {
     int16_t input;
     std::cin >> input;
   }
 
-  static void PUSH(VMState *vm) {
-    int16_t *reg = FetchRegister((Registers)vm->memory[vm->pc + 1], vm);
-    vm->sp += 1;
-    vm->memory[vm->sp] = *reg;
+  static void PUSH(VMState &vm) {
+    int16_t *reg = FetchRegister((Registers)vm.memory[vm.pc + 1], vm);
+    vm.sp += 1;
+    vm.memory[vm.sp] = *reg;
     {
-      std::lock_guard<std::mutex> lock(vm->mutex);
-      vm->updatedMemoryAddresses.push(vm->sp);
+      std::lock_guard<std::mutex> lock(vm.mutex);
+      vm.updatedMemoryAddresses.push(vm.sp);
     }
   }
 
-  static void POP(VMState *vm) {
-    int16_t *reg = FetchRegister((Registers)vm->memory[vm->pc + 1], vm);
-    *reg = vm->memory[vm->sp];
+  static void POP(VMState &vm) {
+    int16_t *reg = FetchRegister((Registers)vm.memory[vm.pc + 1], vm);
+    *reg = vm.memory[vm.sp];
     {
-      std::lock_guard<std::mutex> lock(vm->mutex);
-      vm->updatedMemoryAddresses.push(vm->sp);
+      std::lock_guard<std::mutex> lock(vm.mutex);
+      vm.updatedMemoryAddresses.push(vm.sp);
     }
-    vm->sp -= 1;
+    vm.sp -= 1;
   }
 
-  static void BR(VMState *vm) {
-    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
-    vm->pc = operand;
+  static void BR(VMState &vm) {
+    int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
+    vm.pc = operand;
   }
 
-  static void BRPOS(VMState *vm) {
-    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
-    if (vm->acc > 0) {
-      vm->pc = operand;
+  static void BRPOS(VMState &vm) {
+    int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
+    if (vm.acc > 0) {
+      vm.pc = operand;
     } else {
-      vm->pc += 2;
+      vm.pc += 2;
     }
   }
 
-  static void SUB(VMState *vm) {
-    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
-    vm->acc -= vm->memory[operand];
+  static void SUB(VMState &vm) {
+    int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
+    vm.acc -= vm.memory[operand];
   }
 
-  static void LOAD(VMState *vm) {
-    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
-    vm->acc = vm->memory[operand];
+  static void LOAD(VMState &vm) {
+    int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
+    vm.acc = vm.memory[operand];
   }
 
-  static void STORE(VMState *vm) {
-    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
-    vm->memory[operand] = vm->acc;
+  static void STORE(VMState &vm) {
+    int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
+    vm.memory[operand] = vm.acc;
     {
-      std::lock_guard<std::mutex> lock(vm->mutex);
-      vm->updatedMemoryAddresses.push(operand);
+      std::lock_guard<std::mutex> lock(vm.mutex);
+      vm.updatedMemoryAddresses.push(operand);
     }
+    std::cout << "Escrevendo ACC no endereço" << operand << "\n";
+    std::cout << "Endereço " << operand << " = " << vm.memory[operand] << "\n";
   }
 
-  static void WRITE(VMState *vm) {
-    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
+  static void WRITE(VMState &vm) {
+    int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
     std::cout << "Output: " << operand << std::endl;
   }
 
-  static void BRZERO(VMState *vm) {
-    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
-    if (vm->acc == 0) {
-      vm->pc = operand;
+  static void BRZERO(VMState &vm) {
+    int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
+    if (vm.acc == 0) {
+      vm.pc = operand;
     } else {
-      vm->pc += 2;
+      vm.pc += 2;
     }
   }
 
-  static void BRNEG(VMState *vm) {
-    int16_t operand = FetchValue(vm->memory[vm->pc], 0, vm);
-    if (vm->acc < 0) {
-      vm->pc = operand;
+  static void BRNEG(VMState &vm) {
+    int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
+    if (vm.acc < 0) {
+      vm.pc = operand;
     } else {
-      vm->pc += 2;
+      vm.pc += 2;
     }
   }
 };
 
-OperationControls PollOperationControls(VMState *vm);
-void VMEngine(VMState *vm);
-void ExecuteStep(VMState *vm);
+class VMEngine {
+  std::condition_variable conditionVariable;
+  std::mutex mutex;
+  std::atomic<bool> hasNewCommand{false};
+
+public:
+  void Run(VMState &vm) {
+    bool running = false;
+    bool stepReady = false;
+
+    while (true) {
+      auto control = PollOperationControls(vm);
+
+      if (control != NONE) {
+        switch (control) {
+        case CLOSE:
+          return;
+        case FINISH:
+          running = true;
+          break;
+        case STEP:
+          stepReady = true;
+          break;
+        default:
+          break;
+        }
+      }
+
+      if (running && !vm.isHalted) {
+        ExecuteStep(vm);
+      } else if (stepReady && !vm.isHalted) {
+        ExecuteStep(vm);
+        stepReady = false;
+      } else {
+        std::unique_lock<std::mutex> lock(mutex);
+        conditionVariable.wait_for(lock, std::chrono::milliseconds(16));
+      }
+    }
+  }
+
+  void NotifyCommand() {
+    hasNewCommand = true;
+    conditionVariable.notify_one();
+  }
+};
+
 #endif // !H_VM

@@ -8,7 +8,10 @@
 
 int main(int argc, char *argv[]) {
   Operations::InitializeMap();
-  VMState *vm = VMStateSetup();
+  VMEngine engine;
+  VMState vm;
+
+  VMStateSetup(vm);
 
   std::ifstream file(argv[1], std::ios::binary);
 
@@ -22,17 +25,18 @@ int main(int argc, char *argv[]) {
   int16_t buffer;
 
   while (file.read(reinterpret_cast<char *>(&buffer), sizeof(buffer))) {
-    vm->memory[instructionsMemoryAddress] = buffer;
+    vm.memory[instructionsMemoryAddress] = buffer;
     ++instructionsMemoryAddress;
   }
 
-  std::thread engine(VMEngine, vm);
+  std::thread engineThread(&VMEngine::Run, &engine, std::ref(vm));
+
   GLFWwindow *window = MainWindowSetup(1280, 720, "Pentacle VM");
 
   IMGUIsetup(window);
 
   for (int i = 31; i < 50; ++i) {
-    std::cout << vm->memory[i] << " ";
+    std::cout << vm.memory[i] << " ";
   }
 
   std::cout << std::endl;
@@ -41,8 +45,8 @@ int main(int argc, char *argv[]) {
     RenderMainWindow(window, vm);
   }
 
-  vm->sigClose = true;
-  engine.join();
+  vm.sigClose = true;
+  engineThread.join();
 
   WindowCleanup(window);
 

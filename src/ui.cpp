@@ -3,7 +3,7 @@
 #include "vm.hpp"
 
 // INSERIR OS WIDGETS DE VOCÊS AQUI!!!
-void RenderMainWindow(GLFWwindow *window, VMState *vm) {
+void RenderMainWindow(GLFWwindow *window, VMState &vm) {
   glfwPollEvents();
 
   ImGui_ImplOpenGL3_NewFrame();

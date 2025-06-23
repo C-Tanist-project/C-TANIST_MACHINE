@@ -1,6 +1,6 @@
 #include "src/ui.hpp"
 
-void RenderControlsWindow(bool &window, VMState *vm) {
+void RenderControlsWindow(bool &window, VMState &vm) {
   ImVec2 initialWindowSize = ImVec2(350, 200);
   ImGui::SetNextWindowSize(initialWindowSize, ImGuiCond_FirstUseEver);
 
@@ -15,8 +15,8 @@ void RenderControlsWindow(bool &window, VMState *vm) {
     ImGui::NewLine();
 
     if (ImGui::Button(">=", buttonSize)) {
-      vm->isHalted = !vm->isHalted;
-      std::cout << "Is halted: " << (vm->isHalted ? "true" : "false") << "\n";
+      vm.isHalted = !vm.isHalted;
+      std::cout << "Is halted: " << (vm.isHalted ? "true" : "false") << "\n";
     }
     ImGui::SameLine();
     if (ImGui::Button(">>", buttonSize)) {
@@ -30,7 +30,7 @@ void RenderControlsWindow(bool &window, VMState *vm) {
 
     ImGui::AlignTextToFramePadding();
     if (ImGui::Button("Step", buttonSize)) {
-      vm->sigStep = !vm->sigStep;
+      vm.sigStep = !vm.sigStep;
       std::cout << "Stepping...\n";
     }
 
@@ -49,9 +49,9 @@ void RenderControlsWindow(bool &window, VMState *vm) {
   ImGui::End();
 }
 
-void SkipToEnd(VMState *vm) {
-  if (vm->isHalted) {
+void SkipToEnd(VMState &vm) {
+  if (vm.isHalted) {
     std::cout << "Skipping to the end of the program...\n";
-    vm->sigFinish = true;
+    vm.sigFinish = true;
   }
 }
