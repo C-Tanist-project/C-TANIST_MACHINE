@@ -1,4 +1,5 @@
 ﻿#include "src/ui.hpp"
+#include <bitset>
 
 void RewriteBuffer(const std::filesystem::path currentPath,
                    const bool shouldWipeBuffer, int16_t *buffer,
@@ -113,16 +114,20 @@ void RenderMemoryEditor(VMState &vm) {
 
     ImGui::AlignTextToFramePadding();
 
+    int16_t byteCast = static_cast<int16_t>(buffer[currentAddress]);
+
     ImGui::Text("Endereço: %zu", currentAddress);
-    ImGui::Text("Valor:\n%d (D)\t0x%04X (H)\t%016b (B)", buffer[currentAddress],
-                static_cast<uint16_t>(buffer[currentAddress]),
-                static_cast<uint16_t>(buffer[currentAddress]));
+    ImGui::Text("Valor:\n%d (D)\t0x%04X (H)\t%s (B)", byteCast,
+                static_cast<uint16_t>(byteCast),
+                std::bitset<16>(byteCast).to_string().c_str());
 
     ImGui::Separator();
 
+    std::string utf8Filename = currentPath.filename().u8string();
+
     ImGui::Text("Arquivo selecionado:");
     ImGui::SameLine();
-    ImGui::Text("%s", currentPath.filename().c_str());
+    ImGui::Text("%s", utf8Filename.c_str());
 
     ImVec2 buttonSize = ImVec2(50, 30);
     ImVec2 available = ImGui::GetContentRegionAvail();

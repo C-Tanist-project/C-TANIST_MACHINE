@@ -8,7 +8,9 @@
 #include <string.h>
 
 #include <algorithm>
+#include <codecvt>
 #include <filesystem>
+#include <locale>
 #include <string>
 #include <vector>
 
