@@ -214,7 +214,7 @@ struct MemoryEditor {
     MouseHoveredAddr = 0;
     HighlightMin = HighlightMax = (size_t)-1;
     PreviewEndianness = 0;
-    PreviewDataType = ImGuiDataType_S32;
+    PreviewDataType = ImGuiDataType_S16;
   }
 
   void GotoAddrAndHighlight(size_t addr_min, size_t addr_max) {
@@ -714,17 +714,15 @@ struct MemoryEditor {
     ImU8 *mem_data = (ImU8 *)mem_data_void;
     ImGuiStyle &style = ImGui::GetStyle();
     ImGui::AlignTextToFramePadding();
-    ImGui::Text("Preview as:");
+    ImGui::Text("Visualizar como:");
     ImGui::SameLine();
     ImGui::SetNextItemWidth((s.GlyphWidth * 10.0f) +
                             style.FramePadding.x * 2.0f +
                             style.ItemInnerSpacing.x);
 
     static const ImGuiDataType supported_data_types[] = {
-        ImGuiDataType_S8,    ImGuiDataType_U8,  ImGuiDataType_S16,
-        ImGuiDataType_U16,   ImGuiDataType_S32, ImGuiDataType_U32,
-        ImGuiDataType_S64,   ImGuiDataType_U64, ImGuiDataType_Float,
-        ImGuiDataType_Double};
+        ImGuiDataType_S8, ImGuiDataType_U8, ImGuiDataType_S16,
+        ImGuiDataType_U16};
     if (ImGui::BeginCombo("##combo_type", DataTypeGetDesc(PreviewDataType),
                           ImGuiComboFlags_HeightLargest)) {
       for (int n = 0; n < IM_ARRAYSIZE(supported_data_types); n++) {
