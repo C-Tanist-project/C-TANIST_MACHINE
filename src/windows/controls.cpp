@@ -1,5 +1,30 @@
 #include "src/ui.hpp"
 
+// O novo modelo de comunicação UI->VM se livra daquele espaguete de atomics.
+// Agora é baseado em variáveis de condição. Estou aproveitando a chamada para o
+// notify da CV para passar a operação solicitada. Essas operações são
+// empilhadas, então dá pra chamar várias delas em sequência.
+//
+// As chamadas possíveis, por enquanto, são:
+//
+// STOP: para a máquina
+// RUN: inicia a máquina no modo interativo
+// FINISH: inicia a máquina no modo não interativo (que ignora o delay de speed)
+// STEP: passa para o próximo passo
+// CLOSE: fecha a thread da máquina.
+//
+// Outras chamadas serão definidas em "vm.hpp", no enum "VMControls"
+//
+// CODICONS é a coleção de ícones do VScode em formato de fonte. Os glifos da
+// fonte são chamados via chamada de macro, no formato:
+//
+// "ICON_CI_{NOME_DO_ICONE}"
+//
+// Abaixo tem alguns exemplos. Nesse link tem todos os ícones possível com os
+// nomes:
+//
+// https://microsoft.github.io/vscode-codicons/dist/codicon.html
+
 void RenderControlsWindow(bool &window, VMState &vm) {
   ImVec2 initialWindowSize = ImVec2(350, 200);
   ImGui::SetNextWindowSize(initialWindowSize, ImGuiCond_FirstUseEver);
@@ -19,7 +44,7 @@ void RenderControlsWindow(bool &window, VMState &vm) {
       std::cout << "Signal to stop sent...";
     }
     ImGui::SameLine();
-    if (ImGui::Button(ICON_CI_RUN_ALL "Rodar", buttonSize)) {
+    if (ImGui::Button(ICON_CI_RUN_ALL, buttonSize)) {
       SkipToEnd(vm);
     }
     ImGui::SameLine();
