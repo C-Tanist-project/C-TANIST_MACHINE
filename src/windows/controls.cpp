@@ -35,9 +35,6 @@ void RenderControlsWindow(bool &window, VMState &vm) {
 
     ImGui::Text("Controls");
     ImGui::Separator();
-    ImGui::NewLine();
-    ImGui::NewLine();
-    ImGui::NewLine();
 
     if (ImGui::Button(ICON_CI_DEBUG_STOP, buttonSize)) {
       VMEngine::NotifyCommand(STOP);

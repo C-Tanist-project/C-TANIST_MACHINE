@@ -14,7 +14,7 @@
 #include <thread>
 #include <variant>
 
-typedef enum { FINISH, RUN, STEP, STOP, CLOSE } VMControls;
+typedef enum { FINISH, RUN, STEP, STOP, CLOSE, NONE } VMControls;
 
 typedef enum { ACC, R0, R1 } Registers;
 
