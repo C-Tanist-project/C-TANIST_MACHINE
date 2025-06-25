@@ -19,7 +19,7 @@ void RenderControlsWindow(bool &window, VMState &vm) {
       std::cout << "Signal to stop sent...";
     }
     ImGui::SameLine();
-    if (ImGui::Button(ICON_CI_RUN_ALL, buttonSize)) {
+    if (ImGui::Button(ICON_CI_RUN_ALL "Rodar", buttonSize)) {
       SkipToEnd(vm);
     }
     ImGui::SameLine();
