@@ -6,7 +6,7 @@ void RenderControlsWindow(bool &window, VMState &vm) {
 
   if (ImGui::Begin("Controls", &window, ImGuiWindowFlags_None)) {
     ImGui::AlignTextToFramePadding();
-    ImVec2 buttonSize = ImVec2(40, 20);
+    ImVec2 buttonSize = ImVec2(30, 30);
 
     ImGui::Text("Controls");
     ImGui::Separator();
@@ -14,12 +14,12 @@ void RenderControlsWindow(bool &window, VMState &vm) {
     ImGui::NewLine();
     ImGui::NewLine();
 
-    if (ImGui::Button(">=", buttonSize)) {
+    if (ImGui::Button(ICON_CI_DEBUG_STOP, buttonSize)) {
       VMEngine::NotifyCommand(STOP);
       std::cout << "Signal to stop sent...";
     }
     ImGui::SameLine();
-    if (ImGui::Button(">>", buttonSize)) {
+    if (ImGui::Button(ICON_CI_RUN_ALL, buttonSize)) {
       SkipToEnd(vm);
     }
     ImGui::SameLine();
@@ -29,7 +29,7 @@ void RenderControlsWindow(bool &window, VMState &vm) {
                          5 * buttonSize.x);
 
     ImGui::AlignTextToFramePadding();
-    if (ImGui::Button("Step", buttonSize)) {
+    if (ImGui::Button(ICON_CI_DEBUG_CONTINUE_SMALL, buttonSize)) {
       VMEngine::NotifyCommand(STEP);
       std::cout << "Stepping...\n";
     }

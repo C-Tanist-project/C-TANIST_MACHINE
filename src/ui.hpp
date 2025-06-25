@@ -16,6 +16,7 @@
 
 #include "external/ImGuiFileDialog.h"
 #include "external/ImGuiFileDialogConfig.h"
+#include "external/codicon_cpp_header.h"
 #include "external/imgui_memory_editor.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"

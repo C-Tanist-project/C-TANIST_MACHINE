@@ -1,5 +1,5 @@
 #include "ui.hpp"
-
+#include "external/codicon_hex.h"
 #include "vm.hpp"
 
 // INSERIR OS WIDGETS DE VOCÊS AQUI!!!
@@ -81,6 +81,19 @@ void IMGUIsetup(GLFWwindow *window) {
   (void)io;
 
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  io.Fonts->AddFontDefault();
+
+  ImFontConfig iconsConfig;
+  iconsConfig.MergeMode = true;
+  iconsConfig.PixelSnapH = true;
+  iconsConfig.GlyphOffset.y = 4.0f;
+  iconsConfig.GlyphMinAdvanceX = 14.0f;
+  iconsConfig.FontDataOwnedByAtlas = false;
+
+  static const ImWchar iconRanges[] = {ICON_MIN_CI, ICON_MAX_CI, 0};
+
+  io.Fonts->AddFontFromMemoryTTF(codicon_ttf, codicon_ttf_len, 15.0f,
+                                 &iconsConfig, iconRanges);
 
   ImGui::StyleColorsDark();
 
