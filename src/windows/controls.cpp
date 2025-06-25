@@ -15,14 +15,12 @@ void RenderControlsWindow(bool &window, VMState &vm) {
     ImGui::NewLine();
 
     if (ImGui::Button(">=", buttonSize)) {
-      vm.sigStop = true;
-      VMEngine::NotifyCommand();
+      VMEngine::NotifyCommand(STOP);
       std::cout << "Signal to stop sent...";
     }
     ImGui::SameLine();
     if (ImGui::Button(">>", buttonSize)) {
       SkipToEnd(vm);
-      VMEngine::NotifyCommand();
     }
     ImGui::SameLine();
 
@@ -32,8 +30,7 @@ void RenderControlsWindow(bool &window, VMState &vm) {
 
     ImGui::AlignTextToFramePadding();
     if (ImGui::Button("Step", buttonSize)) {
-      vm.sigStep = true;
-      VMEngine::NotifyCommand();
+      VMEngine::NotifyCommand(STEP);
       std::cout << "Stepping...\n";
     }
 
@@ -55,7 +52,7 @@ void RenderControlsWindow(bool &window, VMState &vm) {
 void SkipToEnd(VMState &vm) {
   if (vm.isHalted) {
     std::cout << "Skipping to the end of the program...\n";
-    vm.sigFinish = true;
+    VMEngine::NotifyCommand(FINISH);
   } else {
     std::cout << "VM is already running\n";
   }

@@ -44,7 +44,6 @@ GLFWwindow *MainWindowSetup(const int width, const int height,
 
   if (!glfwInit()) {
     perror("GLFW Error callback failed.");
-
     exit(EXIT_FAILURE);
   }
 
@@ -52,7 +51,6 @@ GLFWwindow *MainWindowSetup(const int width, const int height,
 
   if (window == nullptr) {
     perror("GLFW Window Setup failed.");
-
     exit(EXIT_FAILURE);
   }
 

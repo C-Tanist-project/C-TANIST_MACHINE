@@ -96,13 +96,11 @@ void ExecuteStep(VMState &vm) {
   case OP_PUSH:
     if (vm.sp == 31) {
       vm.pc = 0;
-      vm.sigPause = true;
       return;
     }
   case OP_POP:
     if (vm.sp == 2) {
       vm.pc = 0;
-      vm.sigPause = true;
       return;
     }
   default:
@@ -112,19 +110,4 @@ void ExecuteStep(VMState &vm) {
   Operations::execute[opcode](vm);
 
   vm.pc += offset;
-}
-
-OperationControls PollOperationControls(VMState &vm) {
-  if (vm.sigClose.exchange(false))
-    return CLOSE;
-  if (vm.sigStop.exchange(false))
-    return STOP;
-  if (vm.sigFinish.exchange(false))
-    return FINISH;
-  if (vm.sigStep.exchange(false))
-    return STEP;
-  if (vm.sigRun.exchange(false))
-    return RUN;
-
-  return NONE;
 }

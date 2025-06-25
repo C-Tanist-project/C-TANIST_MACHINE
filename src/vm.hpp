@@ -8,12 +8,13 @@
 #include <iostream>
 #include <map>
 #include <mutex>
+#include <queue>
 #include <stack>
 #include <syncstream>
 #include <thread>
 #include <variant>
 
-typedef enum { FINISH, RUN, STEP, STOP, CLOSE, NONE } OperationControls;
+typedef enum { FINISH, RUN, STEP, STOP, CLOSE, NONE } VMControls;
 
 typedef enum { ACC, R0, R1 } Registers;
 
@@ -50,9 +51,7 @@ typedef struct vmstatestruct {
 
   std::mutex mutex;
 
-  std::atomic<bool> sigRun{false}, sigFinish{false}, sigPause{false},
-      sigClose{false}, sigStep{false}, sigStop{false}, isHalted{false},
-      isRunning{false}, hasError{false};
+  std::atomic<bool> isHalted{false}, isRunning{false}, hasError{false};
 } VMState;
 
 void ExecuteStep(VMState &vm);
@@ -65,7 +64,6 @@ VMState &vmStateSetup();
 
 OperandFormat DecodeOperandFormat(int16_t instruction,
                                   unsigned char operandIdx);
-OperationControls PollOperationControls(VMState &vm);
 
 class Operations {
 public:
@@ -201,8 +199,6 @@ public:
       std::lock_guard<std::mutex> lock(vm.mutex);
       vm.updatedMemoryAddresses.push(operand);
     }
-    std::cout << "Escrevendo ACC no endereço" << operand << "\n";
-    std::cout << "Endereço " << operand << " = " << vm.memory[operand] << "\n";
   }
 
   static void WRITE(VMState &vm) {
@@ -231,8 +227,8 @@ public:
 
 class VMEngine {
   static inline std::condition_variable conditionVariable;
-  std::mutex mutexEngine;
-  static inline std::atomic<bool> hasNewCommand{false};
+  static inline std::mutex controlMutex;
+  static inline std::queue<VMControls> controlQueue;
 
 public:
   void Run(VMState &vm) {
@@ -240,7 +236,7 @@ public:
     bool stepReady = false;
 
     while (true) {
-      auto control = PollOperationControls(vm);
+      auto control = GetNextCommand();
 
       if (control != NONE) {
         switch (control) {
@@ -263,16 +259,28 @@ public:
         ExecuteStep(vm);
         stepReady = false;
       } else {
-        std::unique_lock<std::mutex> lock(mutexEngine);
+        std::unique_lock<std::mutex> lock(controlMutex);
         conditionVariable.wait_for(lock, std::chrono::milliseconds(16));
       }
     }
   }
 
-  static void NotifyCommand() {
-    std::cout << "Received!\n";
-    hasNewCommand = true;
-    conditionVariable.notify_one();
+  static void NotifyCommand(VMControls command) {
+    {
+      std::lock_guard<std::mutex> lock(controlMutex);
+      controlQueue.push(command);
+      conditionVariable.notify_one();
+    }
+  }
+
+private:
+  VMControls GetNextCommand() {
+    std::lock_guard<std::mutex> lock(controlMutex);
+    if (controlQueue.empty())
+      return NONE;
+    auto command = controlQueue.front();
+    controlQueue.pop();
+    return command;
   }
 };
 

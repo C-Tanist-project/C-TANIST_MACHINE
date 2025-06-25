@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     RenderMainWindow(window, vm);
   }
 
-  vm.sigClose = true;
+  VMEngine::NotifyCommand(CLOSE);
   engineThread.join();
 
   WindowCleanup(window);
