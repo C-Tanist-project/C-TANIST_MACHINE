@@ -69,11 +69,12 @@ void RenderControlsWindow(bool &window, VMState &vm) {
 
     ImGui::AlignTextToFramePadding();
     ImGui::PushItemWidth(windowWidth - 20);
-    static float speed = 1.0f;
+    static float speed = vm.clockSpeed;
     if (ImGui::SliderFloat("##SpeedSlider", &speed, 0.0f, 5.0f, "%.2f Hz",
                            ImGuiSliderFlags_Logarithmic)) {
+      vm.clockSpeed.store(speed);
     }
-    vm.clockSpeed = speed;
+    // acorda a VM pra atualizar a velocidade :D
     ImGui::PopItemWidth();
   }
 

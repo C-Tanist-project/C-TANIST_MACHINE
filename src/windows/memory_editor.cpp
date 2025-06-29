@@ -38,7 +38,7 @@ void RewriteBuffer(const std::filesystem::path currentPath,
 // CUSTOMHIGHLIGHTS: trunca o highlight no byte selecionado com a posição de
 // memória associada a ele.
 bool CustomHighlights(const ImU8 *mem, size_t offset, void *userData) {
-  MemoryEditor *data = (MemoryEditor *)userData;
+  MemoryEditor *data = ((HighlightData *)userData)->memEdit;
 
   size_t current = data->DataPreviewAddr;
   size_t pairStart;
@@ -52,10 +52,38 @@ bool CustomHighlights(const ImU8 *mem, size_t offset, void *userData) {
   }
 
   return (offset >= pairStart && offset <= pairEnd);
+  ;
+}
+
+// Um extra legal: O endereço do PC sempre aparece em vermelho
+ImU32 CustomBGColor(const ImU8 *mem, size_t offset, void *userData) {
+  MemoryEditor *data = ((HighlightData *)userData)->memEdit;
+  int16_t pc = ((HighlightData *)userData)->pc;
+
+  size_t current = data->DataPreviewAddr;
+  size_t pairStart;
+  size_t pairEnd;
+  if (data->DataPreviewAddr % 2) {
+    pairStart = current - 1;
+    pairEnd = current;
+  } else {
+    pairStart = current;
+    pairEnd = current + 1;
+  }
+
+  if (offset >= (pc * 2) && offset <= (pc * 2) + 1) {
+    return IM_COL32(255, 0, 0, 50);
+  } else if (offset >= pairStart && offset <= pairEnd) {
+    return data->HighlightColor;
+  }
+  return IM_COL32(0, 0, 0, 0);
 }
 
 void RenderMemoryEditor(VMState &vm) {
   static MemoryEditor memEdit;
+  static HighlightData highlightData;
+  highlightData.memEdit = &memEdit;
+  highlightData.pc = vm.pc;
   // memEdit.PreviewDataType = ImGuiDataType_S16;
   static std::filesystem::path currentPath;
   static bool openDialog = false;
@@ -85,8 +113,11 @@ void RenderMemoryEditor(VMState &vm) {
   memEdit.OptFooterExtraHeight =
       120.0; // Espaço extra no fim do módulo para widgets extra
   memEdit.HighlightFn = CustomHighlights; // ditto
+  memEdit.BgColorFn = CustomBGColor;
   memEdit.UserData =
-      &memEdit; // Utiizado em CustomHighlights: é o estado do próprio editor
+      &highlightData; // Utiizado em CustomHighlights: é uma struct que contém o
+                      // PC atual e o estado do proprio memEdit
+  memEdit.ReadOnly = vm.isRunning; // só deixa editar se a VM não tá rodando
 
   if (memEdit.Open) {
     // ATENÇÃO AQUI:

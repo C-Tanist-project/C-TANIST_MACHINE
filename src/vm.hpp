@@ -45,7 +45,7 @@ typedef enum {
 typedef struct vmstatestruct {
   int16_t memory[500] = {0};
 
-  float clockSpeed = 1.0f;
+  std::atomic<float> clockSpeed = 1.0f;
 
   int16_t pc, sp, acc, mop, ri, re, r0, r1;
 
@@ -234,7 +234,8 @@ class VMEngine {
 
 public:
   void Run(VMState &vm) {
-    bool finishing{false}, stepping{false}, hasInitialCopy{false};
+    bool finishing{false}, stepping{false}, hasInitialCopy{false},
+        paused{false};
 
     static int16_t buffer[500];
 
@@ -249,13 +250,14 @@ public:
           finishing = true;
         case RUN:
           vm.isRunning.exchange(true);
+          paused = false;
           break;
         case STEP:
           stepping = true;
-          vm.isRunning.exchange(true);
+          paused = false;
           break;
         case PAUSE:
-          vm.isRunning.exchange(false);
+          paused = true;
           break;
         case STOP:
           vm.isRunning.exchange(false);
@@ -265,7 +267,8 @@ public:
           finishing = false;
           {
             std::lock_guard<std::mutex> lock(vm.mutex);
-            memcpy(&vm.memory, buffer, sizeof(buffer));
+            memcpy(vm.memory, buffer, sizeof(buffer));
+            vm.updatedMemoryAddresses.push(-1);
           }
           VMStateSetup(vm);
           break;
@@ -274,12 +277,15 @@ public:
         }
       }
 
-      if (vm.isRunning && !hasInitialCopy) {
+      if ((vm.isRunning || stepping) && !hasInitialCopy) {
         std::lock_guard<std::mutex> lock(vm.mutex);
         memcpy(buffer, vm.memory, sizeof(buffer));
       }
 
-      if (finishing && !vm.isHalted) {
+      if (paused) {
+        std::unique_lock<std::mutex> lock(controlMutex);
+        conditionVariable.wait_for(lock, std::chrono::milliseconds(16));
+      } else if (finishing && !vm.isHalted) {
         ExecuteStep(vm);
       } else if (vm.isRunning && !vm.isHalted) {
         ExecuteStep(vm);

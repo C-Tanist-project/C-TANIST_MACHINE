@@ -1,5 +1,4 @@
-#ifndef H_UI
-#define H_UI
+#pragma once
 #define USE_STD_FILESYSTEM
 
 #include <GLFW/glfw3.h>
@@ -23,6 +22,11 @@
 #include "imgui_impl_opengl3.h"
 #include "vm.hpp"
 
+typedef struct highlightdata {
+  MemoryEditor *memEdit;
+  int16_t pc;
+} HighlightData;
+
 void GLFWErrorCallback(int error, const char *description);
 GLFWwindow *MainWindowSetup(const int width, const int height,
                             const char *title);
@@ -33,5 +37,3 @@ void RenderControlsWindow(bool &window, VMState &vm);
 void RenderVMState(VMState &vm);
 void WindowCleanup(GLFWwindow *window);
 void SkipToEnd(VMState &vm);
-
-#endif // !H_UI
