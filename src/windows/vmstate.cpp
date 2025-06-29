@@ -1,16 +1,20 @@
 #include "src/ui.hpp"
 #include "src/vm.hpp"
 
-void DrawRegisterPair(const char *label1, short *reg1, const char *label2,
-                      short *reg2) {
+// casts para o tipo correto (por nenhum motivo em particular)
+void DrawRegisterPair(const char *label1, int16_t *reg1, const char *label2,
+                      int16_t *reg2) {
   ImGui::PushID(label1);
-  ImGui::SetNextItemWidth(80);
+  // o maior numero que vai aparecer aqui é ~-32000, não precisa comodar muito
+  // mais dígitos que isso
+  ImGui::SetNextItemWidth(52.5);
+
   ImGui::InputScalar(label1, ImGuiDataType_S16, reg1, nullptr, nullptr, "%d",
                      ImGuiInputTextFlags_ReadOnly);
 
   ImGui::SameLine(0, 24);
 
-  ImGui::SetNextItemWidth(80);
+  ImGui::SetNextItemWidth(52.5);
   ImGui::InputScalar(label2, ImGuiDataType_S16, reg2, nullptr, nullptr, "%d",
                      ImGuiInputTextFlags_ReadOnly);
   ImGui::PopID();
@@ -22,7 +26,7 @@ void RenderVMState(VMState &vmState) {
                        ImGuiWindowFlags_NoResize |
                        ImGuiWindowFlags_AlwaysAutoResize)) {
     ImGui::Dummy(ImVec2(0, 5));
-    ImGui::Indent(3 * ImGui::GetStyle().IndentSpacing / 2);
+    // ImGui::Indent(3 * ImGui::GetStyle().IndentSpacing / 2);
 
     DrawRegisterPair("PC ", &vmState.pc, "SP ", &vmState.sp);
     ImGui::Dummy(ImVec2(0, 4));

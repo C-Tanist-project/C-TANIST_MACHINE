@@ -15,11 +15,9 @@ void RenderMainWindow(GLFWwindow *window, VMState &vm) {
   // Renderização começa aqui
   static bool showControlWindow = true;
 
-  RenderMemoryEditor(vm);
   RenderControlsWindow(showControlWindow, vm);
+  RenderMemoryEditor(vm);
   RenderVMState(vm);
-
-  // ImGui::ShowDemoWindow();
 
   ImGui::Render();
 

@@ -26,10 +26,15 @@
 // https://microsoft.github.io/vscode-codicons/dist/codicon.html
 
 void RenderControlsWindow(bool &window, VMState &vm) {
-  ImVec2 initialWindowSize = ImVec2(350, 200);
-  ImGui::SetNextWindowSize(initialWindowSize, ImGuiCond_FirstUseEver);
+  // ImVec2 initialWindowSize = ImVec2(350, 200);
+  // ImGui::SetNextWindowSize(initialWindowSize, ImGuiCond_FirstUseEver);
 
-  if (ImGui::Begin("Controls", &window, ImGuiWindowFlags_None)) {
+  // Sinceramente eu não entendi as escolhas de layout desse módulo, então
+  // tentei deixar consistente com o VMSTATE
+  if (ImGui::Begin("Controls", &window,
+                   ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                       ImGuiWindowFlags_AlwaysAutoResize)) {
+
     ImGui::AlignTextToFramePadding();
     ImVec2 buttonSize = ImVec2(30, 30);
 
@@ -38,44 +43,39 @@ void RenderControlsWindow(bool &window, VMState &vm) {
 
     if (ImGui::Button(ICON_CI_DEBUG_STOP, buttonSize)) {
       VMEngine::NotifyCommand(STOP);
-      std::cout << "Signal to stop sent...";
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_CI_RUN, buttonSize)) {
+      VMEngine::NotifyCommand(RUN);
     }
     ImGui::SameLine();
     if (ImGui::Button(ICON_CI_RUN_ALL, buttonSize)) {
-      SkipToEnd(vm);
+      VMEngine::NotifyCommand(FINISH);
     }
     ImGui::SameLine();
 
     float windowWidth = ImGui::GetWindowSize().x;
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + windowWidth -
-                         5 * buttonSize.x);
+    // Eu não compreendi o propósito desse alinamento
+    // ImGui::SetCursorPosX(ImGui::GetCursorPosX() + windowWidth -
+    //                    5 * buttonSize.x);
 
     ImGui::AlignTextToFramePadding();
     if (ImGui::Button(ICON_CI_DEBUG_CONTINUE_SMALL, buttonSize)) {
       VMEngine::NotifyCommand(STEP);
-      std::cout << "Stepping...\n";
     }
 
-    ImGui::NewLine();
     ImGui::Text("Speed");
+    ImGui::Separator();
 
+    ImGui::AlignTextToFramePadding();
     ImGui::PushItemWidth(windowWidth - 20);
-    static float speed = 0.0f;
-    if (ImGui::SliderFloat("##SpeedSlider", &speed, 0.0f, 10.0f, "%.4f",
+    static float speed = 1.0f;
+    if (ImGui::SliderFloat("##SpeedSlider", &speed, 0.0f, 5.0f, "%.2f Hz",
                            ImGuiSliderFlags_Logarithmic)) {
-      std::cout << "Speed changed to: " << speed << "\n";
     }
+    vm.clockSpeed = speed;
     ImGui::PopItemWidth();
   }
 
   ImGui::End();
-}
-
-void SkipToEnd(VMState &vm) {
-  if (vm.isHalted) {
-    std::cout << "Skipping to the end of the program...\n";
-    VMEngine::NotifyCommand(FINISH);
-  } else {
-    std::cout << "VM is already running\n";
-  }
 }

@@ -94,11 +94,16 @@ void RenderMemoryEditor(VMState &vm) {
     // um sistema de pilha de mudanças na memória. Cada vez que a VM escrever na
     // memória, a alteração é empilhada; a cada frame, as alterações são
     // desempilhadas e atualizadas no buffer local.
+    // ATENÇÃO: endereço -1 é um sinal para reescrever a memória toda :)
     {
       std::lock_guard<std::mutex> lock(vm.mutex);
       while (!vm.updatedMemoryAddresses.empty()) {
         int16_t updatedAddress = vm.updatedMemoryAddresses.top();
         vm.updatedMemoryAddresses.pop();
+        if (updatedAddress < 0) {
+          memcpy(buffer, vm.memory, sizeof(buffer));
+          break;
+        }
         buffer[updatedAddress] = vm.memory[updatedAddress];
       }
     }

@@ -1,10 +1,10 @@
-#ifndef H_VM
-#define H_VM
+#pragma once
 
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <mutex>
@@ -14,7 +14,7 @@
 #include <thread>
 #include <variant>
 
-typedef enum { FINISH, RUN, STEP, STOP, CLOSE, NONE } VMControls;
+typedef enum { FINISH, RUN, STEP, STOP, PAUSE, CLOSE, NONE } VMControls;
 
 typedef enum { ACC, R0, R1 } Registers;
 
@@ -44,6 +44,8 @@ typedef enum {
 
 typedef struct vmstatestruct {
   int16_t memory[500] = {0};
+
+  float clockSpeed = 1.0f;
 
   int16_t pc, sp, acc, mop, ri, re, r0, r1;
 
@@ -232,8 +234,9 @@ class VMEngine {
 
 public:
   void Run(VMState &vm) {
-    bool running = false;
-    bool stepReady = false;
+    bool finishing{false}, stepping{false}, hasInitialCopy{false};
+
+    static int16_t buffer[500];
 
     while (true) {
       auto control = GetNextCommand();
@@ -243,21 +246,51 @@ public:
         case CLOSE:
           return;
         case FINISH:
-          running = true;
+          finishing = true;
+        case RUN:
+          vm.isRunning.exchange(true);
           break;
         case STEP:
-          stepReady = true;
+          stepping = true;
+          vm.isRunning.exchange(true);
           break;
-        default:
+        case PAUSE:
+          vm.isRunning.exchange(false);
+          break;
+        case STOP:
+          vm.isRunning.exchange(false);
+          vm.isHalted.exchange(false);
+          hasInitialCopy = false;
+          stepping = false;
+          finishing = false;
+          {
+            std::lock_guard<std::mutex> lock(vm.mutex);
+            memcpy(&vm.memory, buffer, sizeof(buffer));
+          }
+          VMStateSetup(vm);
+          break;
+        case NONE:
           break;
         }
       }
 
-      if (running && !vm.isHalted) {
+      if (vm.isRunning && !hasInitialCopy) {
+        std::lock_guard<std::mutex> lock(vm.mutex);
+        memcpy(buffer, vm.memory, sizeof(buffer));
+      }
+
+      if (finishing && !vm.isHalted) {
         ExecuteStep(vm);
-      } else if (stepReady && !vm.isHalted) {
+      } else if (vm.isRunning && !vm.isHalted) {
         ExecuteStep(vm);
-        stepReady = false;
+
+        std::unique_lock<std::mutex> lock(controlMutex);
+        std::chrono::duration<float> clock(1.0f / vm.clockSpeed);
+        conditionVariable.wait_for(lock, clock);
+
+      } else if (stepping && !vm.isHalted) {
+        ExecuteStep(vm);
+        stepping = false;
       } else {
         std::unique_lock<std::mutex> lock(controlMutex);
         conditionVariable.wait_for(lock, std::chrono::milliseconds(16));
@@ -283,5 +316,3 @@ private:
     return command;
   }
 };
-
-#endif // !H_VM
