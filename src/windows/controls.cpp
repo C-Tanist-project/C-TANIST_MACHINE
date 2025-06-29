@@ -49,6 +49,10 @@ void RenderControlsWindow(bool &window, VMState &vm) {
       VMEngine::NotifyCommand(RUN);
     }
     ImGui::SameLine();
+    if (ImGui::Button(ICON_CI_DEBUG_PAUSE, buttonSize)) {
+      VMEngine::NotifyCommand(PAUSE);
+    }
+    ImGui::SameLine();
     if (ImGui::Button(ICON_CI_RUN_ALL, buttonSize)) {
       VMEngine::NotifyCommand(FINISH);
     }

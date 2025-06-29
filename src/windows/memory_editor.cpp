@@ -274,6 +274,9 @@ void RenderMemoryEditor(VMState &vm) {
       ImGuiFileDialog::Instance()->Close();
       openDialog = false;
       openPopup = true;
+    } else {
+      ImGuiFileDialog::Instance()->Close();
+      openDialog = false;
     }
   }
 }
