@@ -61,3 +61,6 @@ In case of doubt, refer to the [meson installation manual](https://mesonbuild.co
 - [@mthsrnn](https://www.github.com/mthsrnn)
 - [@RaffaellSM](https://github.com/RaffaellSM)
 - [@Vitor-a-o](https://github.com/Vitor-a-o)
+
+## Acknowledgements
+This project uses Codicons by Microsoft Corporation, licensed under CC BY 4.0.

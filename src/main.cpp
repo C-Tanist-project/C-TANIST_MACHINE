@@ -1,4 +1,3 @@
-
 #include <fstream>
 #include <iostream>
 #include <thread>
@@ -7,41 +6,48 @@
 #include "vm.hpp"
 
 int main(int argc, char *argv[]) {
-    Operations::InitializeMap();
+  Operations::InitializeMap();
+  VMEngine engine;
+  VMState vm;
 
-    VMState *vm = VMStateSetup();
+  VMStateSetup(vm);
 
-    std::ifstream file(argv[1], std::ios::binary);
-    if (!file) {
-        std::cerr << "Error opening file!\n";
-        return 1;
-    }
+  std::ifstream file(argv[1], std::ios::binary);
 
-    int16_t instructionsMemoryAddress = 32;
+  if (!file) {
+    std::cerr << "Error opening file!\n";
+    return 1;
+  }
 
-    unsigned char buffer[2];
+  int16_t instructionsMemoryAddress = 32;
 
-    while (file.read(reinterpret_cast<char *>(buffer), sizeof(buffer))) {
-        u_int16_t word = (buffer[0] << 8) | (buffer[1]);
-        vm->memory[instructionsMemoryAddress] = word;
-        ++instructionsMemoryAddress;
-    }
+  int16_t buffer;
 
-    std::thread engine(VMEngine, vm);
-    GLFWwindow *window = MainWindowSetup(1280, 720, "Pentacle VM");
+  while (file.read(reinterpret_cast<char *>(&buffer), sizeof(buffer))) {
+    vm.memory[instructionsMemoryAddress] = buffer;
+    ++instructionsMemoryAddress;
+  }
 
-    IMGUIsetup(window);
+  std::thread engineThread(&VMEngine::Run, &engine, std::ref(vm));
 
-    for (int i = 31; i < 50; ++i) {
-        std::cout << vm->memory[i] << " ";
-    }
-    while (!glfwWindowShouldClose(window)) {
-        std::unique_lock lock(vm->mutex);
-        RenderMainWindow(window, vm);
-        lock.unlock();
-    }
-    engine.join();
-    WindowCleanup(window);
+  GLFWwindow *window = MainWindowSetup(1280, 720, "Pentacle VM");
 
-    return 0;
+  IMGUIsetup(window);
+
+  for (int i = 31; i < 50; ++i) {
+    std::cout << vm.memory[i] << " ";
+  }
+
+  std::cout << std::endl;
+
+  while (!glfwWindowShouldClose(window)) {
+    RenderMainWindow(window, vm);
+  }
+
+  VMEngine::NotifyCommand(CLOSE);
+  engineThread.join();
+
+  WindowCleanup(window);
+
+  return 0;
 }

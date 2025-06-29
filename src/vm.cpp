@@ -1,20 +1,14 @@
 #include "vm.hpp"
 
-std::map<Opcode, Operations::OpFunc> Operations::execute;
-
-VMState *VMStateSetup() {
-  VMState *vm = new VMState;
-
-  vm->pc = 32;
-  vm->sp = 0;
-  vm->acc = 0;
-  vm->mop = 0;
-  vm->ri = 0;
-  vm->re = 0;
-  vm->r0 = 0;
-  vm->r1 = 0;
-
-  return vm;
+void VMStateSetup(VMState &vm) {
+  vm.pc = 32;
+  vm.sp = 0;
+  vm.acc = 0;
+  vm.mop = 0;
+  vm.ri = 0;
+  vm.re = 0;
+  vm.r0 = 0;
+  vm.r1 = 0;
 }
 
 OperandFormat DecodeOperandFormat(int16_t instruction,
@@ -25,101 +19,95 @@ OperandFormat DecodeOperandFormat(int16_t instruction,
   OperandFormat operandFormat = indirectSwitch ? INDIRECT : DIRECT;
 
   bool immediateSwitch = instruction & (1 << 7);
-  if (immediateSwitch) return operandFormat;
+
+  if (!immediateSwitch)
+    return operandFormat;
 
   switch (opcode) {
-    case OP_COPY:
-      if (operandIdx == 0) return operandFormat;
-    case OP_ADD:
-    case OP_DIVIDE:
-    case OP_LOAD:
-    case OP_MULT:
-    case OP_SUB:
-    case OP_WRITE:
-      return IMMEDIATE;
-    default:
+  case OP_COPY:
+    if (operandIdx == 0)
       return operandFormat;
+  case OP_ADD:
+  case OP_DIVIDE:
+  case OP_LOAD:
+  case OP_MULT:
+  case OP_SUB:
+  case OP_WRITE:
+    return IMMEDIATE;
+    break;
+  default:
+    return operandFormat;
   }
 }
 
-int16_t *FetchRegister(Registers operandIdx, VMState *vm) {
+int16_t *FetchRegister(Registers operandIdx, VMState &vm) {
   switch (operandIdx) {
-    // case ACC:
-    //   return &(vm->acc);
-    //   break;
-    case R0:
-      return &(vm->r0);
-    case R1:
-      return &(vm->r1);
-    default:
-      return &(vm->acc);
+  // case ACC:
+  //   return &(vm.acc);
+  //   break;
+  case R0:
+    return &(vm.r0);
+  case R1:
+    return &(vm.r1);
+  default:
+    return &(vm.acc);
   }
 }
 
-int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState *vm) {
+int16_t FetchValue(int16_t instruction, unsigned char operandIdx, VMState &vm) {
   OperandFormat operandFormat = DecodeOperandFormat(instruction, operandIdx);
-  int16_t rawOperandAddress = vm->pc + operandIdx + 1;
-  int16_t rawOperandValue = vm->memory[rawOperandAddress];
+  int16_t rawOperandAddress = vm.pc + operandIdx + 1;
+  int16_t rawOperandValue = vm.memory[rawOperandAddress];
+
+  std::cout << "RawOperandValue = " << rawOperandValue << "\n";
 
   switch (operandFormat) {
-    // case IMMEDIATE:
-    //   return rawOperandValue;
-    case DIRECT:
-      return vm->memory[rawOperandValue];
-    case INDIRECT:
-      return vm->memory[vm->memory[rawOperandValue]];
-    default:
-      return rawOperandAddress;
+  case IMMEDIATE:
+    return rawOperandValue;
+  case DIRECT:
+    return vm.memory[rawOperandValue];
+  case INDIRECT:
+    return vm.memory[vm.memory[rawOperandValue]];
+  default:
+    return rawOperandValue;
   }
 }
 
-void ExecuteStep(VMState *vm) {
+void ExecuteStep(VMState &vm) {
   unsigned char offset = 0;
 
-  std::unique_lock lock(vm->mutex);
-  int16_t instruction = vm->memory[vm->pc];
+  int16_t instruction = vm.memory[vm.pc];
 
   Opcode opcode = (Opcode)((instruction & 31) % 19);
 
   switch (opcode) {
-    case OP_COPY:
-      offset = 3;
-      break;
-    case OP_BR:
-    case OP_BRNEG:
-    case OP_BRZERO:
-      offset = 0;
-      break;
-    case OP_RET:
-    case OP_STOP:
-      offset = 1;
-      break;
-    case OP_PUSH:
-      if (vm->sp == 31) {
-        vm->pc = 0;
-        vm->sigPause = true;
-        return;
-      }
-    case OP_POP:
-      if (vm->sp == 2) {
-        vm->pc = 0;
-        vm->sigPause = true;
-        return;
-      }
-    default:
-      offset = 2;
+  case OP_COPY:
+    offset = 3;
+    break;
+  case OP_BR:
+  case OP_BRNEG:
+  case OP_BRZERO:
+    offset = 0;
+    break;
+  case OP_RET:
+  case OP_STOP:
+    offset = 1;
+    break;
+  case OP_PUSH:
+    if (vm.sp == 31) {
+      vm.pc = 0;
+      return;
+    }
+  case OP_POP:
+    if (vm.sp == 2) {
+      vm.pc = 0;
+      return;
+    }
+  default:
+    offset = 2;
   }
 
   Operations::execute[opcode](vm);
 
-  vm->pc += offset;
-  lock.unlock();
-}
-
-void VMEngine(VMState *vm) {
-  while (vm->sigRun) {
-    if (!vm->sigPause) {
-      ExecuteStep(vm);
-    }
-  }
+  vm.pc += offset;
 }
