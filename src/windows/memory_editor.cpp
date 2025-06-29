@@ -188,14 +188,14 @@ void RenderMemoryEditor(VMState &vm) {
     ImGui::Text("data[2] = %d", vm.memory[2]);
     */
 
-    // Botão SAVE
+    // Botão STORE
     // Salva no vetor da VM as modifiações feitas no buffer
 
     ImVec2 buttonSize = ImVec2(50, 30);
     ImVec2 available = ImGui::GetContentRegionAvail();
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - buttonSize.x);
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + available.y - buttonSize.y);
-    if (ImGui::Button("Save", buttonSize)) {
+    if (ImGui::Button("Store", buttonSize)) {
       memcpy(&vm.memory, buffer, dataSize);
     }
 
