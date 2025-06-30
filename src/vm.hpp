@@ -47,12 +47,11 @@ typedef struct vmstatestruct {
 
   std::atomic<float> clockSpeed = 1.0f;
 
-  int16_t pc, sp, acc, mop, ri, re, r0, r1,
-      inputValue;  // adicionei o valor lido no input do console
+  int16_t pc, sp, acc, mop, ri, re, r0, r1, inputValue;
 
   std::stack<int16_t> updatedMemoryAddresses;
-  std::queue<std::string> consoleMessages;  // fila do console
-  std::mutex mutex, consoleMutex;           // adicionei um mutex pro console
+  std::queue<std::string> consoleMessages;
+  std::mutex mutex, consoleMutex;
 
   std::atomic<bool> isHalted{false}, isRunning{false}, hasError{false},
       waitingForInput{false};
@@ -147,7 +146,6 @@ class Operations {
 
   static void STOP(VMState &vm) { vm.isHalted = true; }
 
-  // mudei a implementação do READ:
   static void READ(VMState &vm) {
     vm.waitingForInput = true;
     while (vm.waitingForInput) {
@@ -210,7 +208,6 @@ class Operations {
     }
   }
 
-  // mudei a implementação do WRITE:
   static void WRITE(VMState &vm) {
     int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
     int16_t value = vm.memory[operand];
