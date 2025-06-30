@@ -37,3 +37,4 @@ void RenderControlsWindow(bool &window, VMState &vm);
 void RenderVMState(VMState &vm);
 void WindowCleanup(GLFWwindow *window);
 void SkipToEnd(VMState &vm);
+void SetupCtanistStyle();
