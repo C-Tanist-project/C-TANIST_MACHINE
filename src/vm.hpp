@@ -47,13 +47,15 @@ typedef struct vmstatestruct {
 
   std::atomic<float> clockSpeed = 1.0f;
 
-  int16_t pc, sp, acc, mop, ri, re, r0, r1;
+  int16_t pc, sp, acc, mop, ri, re, r0, r1,
+      inputValue;  // adicionei o valor lido no input do console
 
   std::stack<int16_t> updatedMemoryAddresses;
+  std::queue<std::string> consoleMessages;  // fila do console
+  std::mutex mutex, consoleMutex;           // adicionei um mutex pro console
 
-  std::mutex mutex;
-
-  std::atomic<bool> isHalted{false}, isRunning{false}, hasError{false};
+  std::atomic<bool> isHalted{false}, isRunning{false}, hasError{false},
+      waitingForInput{false};
 } VMState;
 
 void ExecuteStep(VMState &vm);
@@ -68,7 +70,7 @@ OperandFormat DecodeOperandFormat(int16_t instruction,
                                   unsigned char operandIdx);
 
 class Operations {
-public:
+ public:
   using OpFunc = void (*)(VMState &);
   friend class VMEngine;
 
@@ -145,9 +147,14 @@ public:
 
   static void STOP(VMState &vm) { vm.isHalted = true; }
 
+  // mudei a implementação do READ:
   static void READ(VMState &vm) {
-    int16_t input;
-    std::cin >> input;
+    vm.waitingForInput = true;
+    while (vm.waitingForInput) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    vm.acc = vm.inputValue;
+    std::cout << "Input: " << vm.inputValue << std::endl;  // teste
   }
 
   static void PUSH(VMState &vm) {
@@ -203,9 +210,15 @@ public:
     }
   }
 
+  // mudei a implementação do WRITE:
   static void WRITE(VMState &vm) {
     int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
-    std::cout << "Output: " << operand << std::endl;
+    int16_t value = vm.memory[operand];
+    {
+      std::lock_guard<std::mutex> lock(vm.consoleMutex);
+      vm.consoleMessages.push("Output: " + std::to_string(value));
+    }
+    std::cout << "Output: " << value << std::endl;  // teste
   }
 
   static void BRZERO(VMState &vm) {
@@ -232,7 +245,7 @@ class VMEngine {
   static inline std::mutex controlMutex;
   static inline std::queue<VMControls> controlQueue;
 
-public:
+ public:
   void Run(VMState &vm) {
     bool finishing{false}, stepping{false}, hasInitialCopy{false},
         paused{false};
@@ -244,36 +257,36 @@ public:
 
       if (control != NONE) {
         switch (control) {
-        case CLOSE:
-          return;
-        case FINISH:
-          finishing = true;
-        case RUN:
-          vm.isRunning.exchange(true);
-          paused = false;
-          break;
-        case STEP:
-          stepping = true;
-          paused = false;
-          break;
-        case PAUSE:
-          paused = true;
-          break;
-        case STOP:
-          vm.isRunning.exchange(false);
-          vm.isHalted.exchange(false);
-          hasInitialCopy = false;
-          stepping = false;
-          finishing = false;
-          {
-            std::lock_guard<std::mutex> lock(vm.mutex);
-            memcpy(vm.memory, buffer, sizeof(buffer));
-            vm.updatedMemoryAddresses.push(-1);
-          }
-          VMStateSetup(vm);
-          break;
-        case NONE:
-          break;
+          case CLOSE:
+            return;
+          case FINISH:
+            finishing = true;
+          case RUN:
+            vm.isRunning.exchange(true);
+            paused = false;
+            break;
+          case STEP:
+            stepping = true;
+            paused = false;
+            break;
+          case PAUSE:
+            paused = true;
+            break;
+          case STOP:
+            vm.isRunning.exchange(false);
+            vm.isHalted.exchange(false);
+            hasInitialCopy = false;
+            stepping = false;
+            finishing = false;
+            {
+              std::lock_guard<std::mutex> lock(vm.mutex);
+              memcpy(vm.memory, buffer, sizeof(buffer));
+              vm.updatedMemoryAddresses.push(-1);
+            }
+            VMStateSetup(vm);
+            break;
+          case NONE:
+            break;
         }
       }
 
@@ -312,11 +325,10 @@ public:
     }
   }
 
-private:
+ private:
   VMControls GetNextCommand() {
     std::lock_guard<std::mutex> lock(controlMutex);
-    if (controlQueue.empty())
-      return NONE;
+    if (controlQueue.empty()) return NONE;
     auto command = controlQueue.front();
     controlQueue.pop();
     return command;

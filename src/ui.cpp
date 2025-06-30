@@ -1,4 +1,5 @@
 #include "ui.hpp"
+
 #include "external/codicon_hex.h"
 #include "vm.hpp"
 
@@ -18,6 +19,7 @@ void RenderMainWindow(GLFWwindow *window, VMState &vm) {
   RenderControlsWindow(showControlWindow, vm);
   RenderMemoryEditor(vm);
   RenderVMState(vm);
+  RenderConsoleWindow(vm);
 
   ImGui::Render();
 
@@ -54,7 +56,7 @@ GLFWwindow *MainWindowSetup(const int width, const int height,
 
   glfwMakeContextCurrent(window);
 
-  glfwSwapInterval(1); // vsync
+  glfwSwapInterval(1);  // vsync
 
   return window;
 }
