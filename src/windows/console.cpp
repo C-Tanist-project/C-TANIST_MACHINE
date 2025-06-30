@@ -17,8 +17,6 @@ void RenderConsoleWindow(VMState& vm) {
 
     ImGui::BeginChild("ConsoleOutput", ImVec2(0, -30), true,
                       ImGuiWindowFlags_HorizontalScrollbar);
-    ImGui::Text("Console Output:");
-    ImGui::Separator();
 
     // mostra as mensagens do histórico
     for (const auto& message : consoleHistory) {
