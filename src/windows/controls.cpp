@@ -32,13 +32,13 @@ void RenderControlsWindow(bool &window, VMState &vm) {
   // Sinceramente eu não entendi as escolhas de layout desse módulo, então
   // tentei deixar consistente com o VMSTATE
   if (window) {
-    if (ImGui::Begin("Controls", &window,
+    if (ImGui::Begin("Controles da VM", &window,
                      ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
                          ImGuiWindowFlags_AlwaysAutoResize)) {
       ImGui::AlignTextToFramePadding();
       ImVec2 buttonSize = ImVec2(30, 30);
 
-      ImGui::Text("Controls");
+      ImGui::Text("Controles");
       ImGui::Separator();
 
       if (ImGui::Button(ICON_CI_DEBUG_STOP, buttonSize)) {
@@ -68,7 +68,7 @@ void RenderControlsWindow(bool &window, VMState &vm) {
         VMEngine::NotifyCommand(STEP);
       }
 
-      ImGui::Text("Speed");
+      ImGui::Text("Velocidade");
       ImGui::Separator();
 
       ImGui::AlignTextToFramePadding();

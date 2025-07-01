@@ -22,7 +22,7 @@ void DrawRegisterPair(const char *label1, int16_t *reg1, const char *label2,
 
 void RenderVMState(VMState &vmState, bool &window) {
   if (window) {
-    if (ImGui::Begin("VM STATE", &window,
+    if (ImGui::Begin("Registradores", &window,
                      ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
                          ImGuiWindowFlags_AlwaysAutoResize)) {
       ImGui::Dummy(ImVec2(0, 5));

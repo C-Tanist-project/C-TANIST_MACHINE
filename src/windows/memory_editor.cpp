@@ -141,7 +141,7 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
     }
     ImVec2 fixedSize(600, 400);
     ImGui::SetNextWindowSize(fixedSize, ImGuiCond_FirstUseEver);
-    ImGui::Begin("Memory Editor", &memEdit.Open,
+    ImGui::Begin("Editor de memória", &memEdit.Open,
                  ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
     memEdit.DrawContents(buffer, bufferSize, 0x0000);
 
@@ -195,11 +195,11 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
     // Botão STORE
     // Salva no vetor da VM as modifiações feitas no buffer
 
-    ImVec2 buttonSize = ImVec2(50, 30);
+    ImVec2 buttonSize = ImVec2(65, 30);
     ImVec2 available = ImGui::GetContentRegionAvail();
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - buttonSize.x);
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + available.y - buttonSize.y);
-    if (ImGui::Button("Store", buttonSize)) {
+    if (ImGui::Button("Salvar", buttonSize)) {
       memcpy(&vm.memory, buffer, dataSize);
     }
 
@@ -210,7 +210,7 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - buttonSize.x -
                          70);
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + available.y - buttonSize.y);
-    if (ImGui::Button("Load", buttonSize)) {
+    if (ImGui::Button("Carregar", buttonSize)) {
       openDialog = true;
     }
 
@@ -224,23 +224,26 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
     // está no buffer; Wipe limpa o buffer antes de escrever o arquivo e Cancel
     // cancela (duh) a operação de escrita.
     if (openPopup) {
-      ImGui::OpenPopup("ClearBuffer");
+      ImGui::OpenPopup("##LimparBufferPopup");
       openPopup = false;
     }
 
-    if (ImGui::BeginPopupModal("ClearBuffer", NULL,
+    if (ImGui::BeginPopupModal("##LimparBufferPopup", NULL,
                                ImGuiWindowFlags_AlwaysAutoResize)) {
-      if (ImGui::Button("Wipe")) {
+      ImGui::Text("Deseja limpar o buffer antes de sobrescrever?");
+      ImGui::NewLine();
+      ImGui::SetCursorPosX(65);
+      if (ImGui::Button("Sim, limpar e sobrescrever", ImVec2(200.0f, 0))) {
         RewriteBuffer(currentPath, true, buffer, 500);
         ImGui::CloseCurrentPopup();
       }
-
-      if (ImGui::Button("Overwrite")) {
+      ImGui::SetCursorPosX(65);
+      if (ImGui::Button("Não, apenas sobrescrever", ImVec2(200.0f, 0))) {
         RewriteBuffer(currentPath, false, buffer, 500);
         ImGui::CloseCurrentPopup();
       }
-
-      if (ImGui::Button("Cancel")) {
+      ImGui::SetCursorPosX(115);
+      if (ImGui::Button("Cancelar", ImVec2(100.0f, 0))) {
         ImGui::CloseCurrentPopup();
       }
       ImGui::EndPopup();
