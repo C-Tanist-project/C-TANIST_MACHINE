@@ -31,10 +31,10 @@ void GLFWErrorCallback(int error, const char *description);
 GLFWwindow *MainWindowSetup(const int width, const int height,
                             const char *title);
 void IMGUIsetup(GLFWwindow *window);
-void RenderMemoryEditor(VMState &vm_state);
+void RenderMemoryEditor(VMState &vm_state, bool &window);
 void RenderMainWindow(GLFWwindow *window, VMState &vm);
 void RenderControlsWindow(bool &window, VMState &vm);
-void RenderVMState(VMState &vm);
+void RenderVMState(VMState &vm, bool &window);
 void WindowCleanup(GLFWwindow *window);
 void SkipToEnd(VMState &vm);
 void SetupCtanistStyle();

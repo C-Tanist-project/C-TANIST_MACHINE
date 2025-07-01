@@ -1,12 +1,12 @@
-﻿#include "src/ui.hpp"
-#include <bitset>
+﻿#include <bitset>
+
+#include "src/ui.hpp"
 
 // REWRITEBUFFER: Função que trata a sobrescrição do buffer de entrada ao
 // carregar arquivos no inspetor.
 void RewriteBuffer(const std::filesystem::path currentPath,
                    const bool shouldWipeBuffer, int16_t *buffer,
                    size_t bufferSize) {
-
   if (shouldWipeBuffer) {
     memset(buffer, 0, bufferSize);
   }
@@ -79,7 +79,7 @@ ImU32 CustomBGColor(const ImU8 *mem, size_t offset, void *userData) {
   return IM_COL32(0, 0, 0, 0);
 }
 
-void RenderMemoryEditor(VMState &vm) {
+void RenderMemoryEditor(VMState &vm, bool &window) {
   static MemoryEditor memEdit;
   static HighlightData highlightData;
   highlightData.memEdit = &memEdit;
@@ -104,21 +104,22 @@ void RenderMemoryEditor(VMState &vm) {
 
   // Opções do editor de memória
   memEdit.OptShowOptions =
-      false; // Desabilita o menu de opções (não ajuda muito)
-  memEdit.OptShowDataPreview = false; // Desabilita o menu de preview (versão
-                                      // customizada disso já foi implementada)
-  memEdit.OptMidColsCount = 2;    // Quebra os 4 bytes em conjuntos de 16 bits
-  memEdit.Cols = 8;               // 4 bytes
-  memEdit.OptAddrDigitsCount = 4; // Mostra sempre 4 bytes no endereçamento
+      false;  // Desabilita o menu de opções (não ajuda muito)
+  memEdit.OptShowDataPreview = false;  // Desabilita o menu de preview (versão
+                                       // customizada disso já foi implementada)
+  memEdit.OptMidColsCount = 2;     // Quebra os 4 bytes em conjuntos de 16 bits
+  memEdit.Cols = 8;                // 4 bytes
+  memEdit.OptAddrDigitsCount = 4;  // Mostra sempre 4 bytes no endereçamento
   memEdit.OptFooterExtraHeight =
-      120.0; // Espaço extra no fim do módulo para widgets extra
-  memEdit.HighlightFn = CustomHighlights; // ditto
+      120.0;  // Espaço extra no fim do módulo para widgets extra
+  memEdit.HighlightFn = CustomHighlights;  // ditto
   memEdit.BgColorFn = CustomBGColor;
   memEdit.UserData =
-      &highlightData; // Utiizado em CustomHighlights: é uma struct que contém o
-                      // PC atual e o estado do proprio memEdit
-  memEdit.ReadOnly = vm.isRunning; // só deixa editar se a VM não tá rodando
+      &highlightData;  // Utiizado em CustomHighlights: é uma struct que contém
+                       // o PC atual e o estado do proprio memEdit
+  memEdit.ReadOnly = vm.isRunning;  // só deixa editar se a VM não tá rodando
 
+  memEdit.Open = window;
   if (memEdit.Open) {
     // ATENÇÃO AQUI:
     // Pra melhorar o desempenho (não ter um memcpy a cada frame) eu implementei
@@ -138,7 +139,10 @@ void RenderMemoryEditor(VMState &vm) {
         buffer[updatedAddress] = vm.memory[updatedAddress];
       }
     }
-    ImGui::Begin("Memory Editor", &memEdit.Open);
+    ImVec2 fixedSize(600, 400);
+    ImGui::SetNextWindowSize(fixedSize, ImGuiCond_FirstUseEver);
+    ImGui::Begin("Memory Editor", &memEdit.Open,
+                 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
     memEdit.DrawContents(buffer, bufferSize, 0x0000);
 
     ImGui::Separator();
@@ -241,8 +245,9 @@ void RenderMemoryEditor(VMState &vm) {
       }
       ImGui::EndPopup();
     }
+    ImGui::End();
+    window = memEdit.Open;
   }
-  ImGui::End();
 
   // Janela de seleção de arquivos
   if (openDialog) {

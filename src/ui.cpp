@@ -17,10 +17,12 @@ void RenderMainWindow(GLFWwindow *window, VMState &vm) {
 
   // Renderização começa aqui
   static bool showControlWindow = true;
+  static bool showMemoryEditorWindow = true;
+  static bool showVMStateWindow = true;
 
   RenderControlsWindow(showControlWindow, vm);
-  RenderMemoryEditor(vm);
-  RenderVMState(vm);
+  RenderMemoryEditor(vm, showMemoryEditorWindow);
+  RenderVMState(vm, showVMStateWindow);
 
   ImGui::Render();
 
@@ -123,7 +125,7 @@ void SetupCtanistStyle() {
   colors[ImGuiCol_Text] = ImVec4(1.00f, 0.85f, 0.85f, 1.00f);
   colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.25f, 0.25f, 1.00f);
   colors[ImGuiCol_WindowBg] = ImVec4(0.05f, 0.05f, 0.05f, 1.00f);
-  colors[ImGuiCol_ChildBg] = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
+  colors[ImGuiCol_ChildBg] = ImVec4(0.05f, 0.05f, 0.05f, 1.00f);
   colors[ImGuiCol_PopupBg] = ImVec4(0.10f, 0.05f, 0.05f, 1.00f);
   colors[ImGuiCol_Border] = ImVec4(0.40f, 0.00f, 0.00f, 0.50f);
   colors[ImGuiCol_FrameBg] = ImVec4(0.25f, 0.00f, 0.00f, 1.00f);
@@ -154,4 +156,10 @@ void SetupCtanistStyle() {
   colors[ImGuiCol_TabActive] = ImVec4(0.70f, 0.15f, 0.15f, 1.00f);
   colors[ImGuiCol_TabUnfocused] = ImVec4(0.20f, 0.00f, 0.00f, 1.00f);
   colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.35f, 0.00f, 0.00f, 1.00f);
+
+  style.FrameRounding = 4.0f;
+  style.GrabRounding = 4.0f;
+  style.WindowRounding = 2.0f;
+  style.ScrollbarRounding = 3.0f;
+  style.FramePadding = ImVec2(6, 4);
 }
