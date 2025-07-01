@@ -71,7 +71,7 @@ ImU32 CustomBGColor(const ImU8 *mem, size_t offset, void *userData) {
     pairEnd = current + 1;
   }
 
-  if (offset >= (pc * 2) && offset <= (pc * 2) + 1) {
+  if (offset >= ((size_t)pc * 2) && offset <= ((size_t)pc * 2) + 1) {
     return IM_COL32(255, 0, 0, 50);
   } else if (offset >= pairStart && offset <= pairEnd) {
     return data->HighlightColor;

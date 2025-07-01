@@ -14,15 +14,28 @@ void RenderMainWindow(GLFWwindow *window, VMState &vm) {
   ImGui_ImplGlfw_NewFrame();
 
   ImGui::NewFrame();
-
   // Renderização começa aqui
-  static bool showControlWindow = true;
-  static bool showMemoryEditorWindow = true;
-  static bool showVMStateWindow = true;
+  static bool showControlWindow = false;
+  static bool showMemoryEditorWindow = false;
+  static bool showVMStateWindow = false;
 
-  RenderControlsWindow(showControlWindow, vm);
-  RenderMemoryEditor(vm, showMemoryEditorWindow);
-  RenderVMState(vm, showVMStateWindow);
+  // Menu de contexto para abrir as janelas
+  if (ImGui::BeginPopupContextVoid("MainContextMenu")) {
+    if (ImGui::MenuItem("Abrir Controles da VM", NULL, showControlWindow))
+      showControlWindow = true;
+    if (ImGui::MenuItem("Abrir Editor de Memória", NULL,
+                        showMemoryEditorWindow))
+      showMemoryEditorWindow = true;
+    if (ImGui::MenuItem("Abrir Estado da VM", NULL, showVMStateWindow))
+      showVMStateWindow = true;
+    ImGui::EndPopup();
+  }
+
+  if (showControlWindow) RenderControlsWindow(showControlWindow, vm);
+
+  if (showMemoryEditorWindow) RenderMemoryEditor(vm, showMemoryEditorWindow);
+
+  if (showVMStateWindow) RenderVMState(vm, showVMStateWindow);
 
   ImGui::Render();
 
