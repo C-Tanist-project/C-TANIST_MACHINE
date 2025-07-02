@@ -18,12 +18,14 @@ void RenderMainWindow(GLFWwindow *window, VMState &vm) {
   static bool showControlWindow = false;
   static bool showMemoryEditorWindow = false;
   static bool showVMStateWindow = false;
+  static bool showConsoleWindow = false;
 
   // Menu de contexto para abrir ou fechar as janelas
   if (ImGui::BeginPopupContextVoid("MenuJanelas")) {
     ImGui::MenuItem("Controles da VM", NULL, &showControlWindow);
     ImGui::MenuItem("Editor de Memória", NULL, &showMemoryEditorWindow);
     ImGui::MenuItem("Registradores", NULL, &showVMStateWindow);
+    ImGui::MenuItem("Console", NULL, &showConsoleWindow);
     ImGui::EndPopup();
   }
 
@@ -32,6 +34,8 @@ void RenderMainWindow(GLFWwindow *window, VMState &vm) {
   if (showMemoryEditorWindow) RenderMemoryEditor(vm, showMemoryEditorWindow);
 
   if (showVMStateWindow) RenderVMState(vm, showVMStateWindow);
+  
+  if (showConsoleWindow) RenderConsoleWindow(vm, showConsoleWindow);
 
   ImGui::Render();
 
