@@ -35,5 +35,6 @@ void RenderMemoryEditor(VMState &vm_state);
 void RenderMainWindow(GLFWwindow *window, VMState &vm);
 void RenderControlsWindow(bool &window, VMState &vm);
 void RenderVMState(VMState &vm);
+void RenderConsoleWindow(VMState &vm);
 void WindowCleanup(GLFWwindow *window);
 void SkipToEnd(VMState &vm);
