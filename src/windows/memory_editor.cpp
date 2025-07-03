@@ -282,7 +282,8 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
       std::string filePathName;
       filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 
-      currentPath.assign(filePathName.c_str());
+      std::cout << filePathName << "\n";
+      currentPath.assign(filePathName);
 
       ImGuiFileDialog::Instance()->Close();
       openDialog = false;
