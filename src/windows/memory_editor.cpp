@@ -3,6 +3,29 @@
 
 #include "src/ui.hpp"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+// Função auxiliar para converter uma string UTF-8 para uma wstring (UTF-16) no
+// Windows
+#ifdef _WIN32
+std::wstring Utf8ToWstring(const std::string &utf8_str) {
+  if (utf8_str.empty()) {
+    return std::wstring();
+  }
+  int size_needed = MultiByteToWideChar(CP_UTF8, 0, &utf8_str[0],
+                                        (int)utf8_str.size(), NULL, 0);
+  if (size_needed == 0) {
+    return std::wstring();
+  }
+  std::wstring wstr_to(size_needed, 0);
+  MultiByteToWideChar(CP_UTF8, 0, &utf8_str[0], (int)utf8_str.size(),
+                      &wstr_to[0], size_needed);
+  return wstr_to;
+}
+#endif
+
 // REWRITEBUFFER: Função que trata a sobrescrição do buffer de entrada ao
 // carregar arquivos no inspetor.
 void RewriteBuffer(const std::filesystem::path currentPath,
@@ -13,12 +36,7 @@ void RewriteBuffer(const std::filesystem::path currentPath,
   }
 
   if (currentPath.extension().string() == ".txt") {
-#ifdef _WIN32
-    std::cout << currentPath.u8string();
-    std::ifstream file(currentPath.u8string(), std::ios::in);
-#else
     std::ifstream file(currentPath, std::ios::in);
-#endif
     int16_t value;
     int i = 0;
     while (file >> value && i < 500) {
@@ -29,12 +47,7 @@ void RewriteBuffer(const std::filesystem::path currentPath,
   }
 
   if (currentPath.extension().string() == ".bin") {
-#ifdef _WIN32
-    std::cout << currentPath.u8string();
-    std::ifstream file(currentPath.u8string(), std::ios::in | std::ios::binary);
-#else
     std::ifstream file(currentPath, std::ios::in | std::ios::binary);
-#endif
     int16_t value;
     int i = 0;
     while (file.read(reinterpret_cast<char *>(&value), sizeof(int16_t)) &&
@@ -287,7 +300,13 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
     if (ImGuiFileDialog::Instance()->IsOk()) {
       std::string filePathName;
       filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-      currentPath.assign(filePathName);
+#ifdef _WIN32
+      std::wstring widePathStr = Utf8ToWstring(filePatName);
+      currentPath = std::filesystem::path(widePathName);
+#else
+      currentPath = std::filesystem::path(filePathName);
+#endif
+      currentPath = std::filesystem::path();
 
       ImGuiFileDialog::Instance()->Close();
       openDialog = false;
