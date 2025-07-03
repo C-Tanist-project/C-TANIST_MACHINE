@@ -301,7 +301,7 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
       std::string filePathName;
       filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 #ifdef _WIN32
-      std::wstring widePathStr = Utf8ToWstring(filePathName);
+      std::wstring widePathName = Utf8ToWstring(filePathName);
       currentPath = std::filesystem::path(widePathName);
 #else
       currentPath = std::filesystem::path(filePathName);
