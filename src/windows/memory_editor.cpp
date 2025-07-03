@@ -279,11 +279,8 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
     // endereço do arquivo selecionado para a variável de armazenamento e abre o
     // popup de modo de escrita.
     if (ImGuiFileDialog::Instance()->IsOk()) {
-#ifdef _WIN32
-      std::wstring filePathName;
-#else
       std::string filePathName;
-#endif
+
       filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 
       std::cout << filePathName << "\n";

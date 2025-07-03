@@ -2,6 +2,10 @@
 #include <iostream>
 #include <thread>
 
+#ifdef _WIN32
+setlocale(LC_ALL, ".UTF8");
+#endif
+
 #include "ui.hpp"
 #include "vm.hpp"
 
