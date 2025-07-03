@@ -14,7 +14,7 @@ void RewriteBuffer(const std::filesystem::path currentPath,
 
   if (currentPath.extension().string() == ".txt") {
 #ifdef _WIN32
-    std::ifstream file(currentPath.wstring(), std::ios::in);
+    std::wifstream file(currentPath.wstring(), std::ios::in);
 #else
     std::ifstream file(currentPath, std::ios::in);
 #endif
