@@ -52,7 +52,6 @@ bool CustomHighlights(const ImU8 *mem, size_t offset, void *userData) {
   }
 
   return (offset >= pairStart && offset <= pairEnd);
-  ;
 }
 
 // Um extra legal: O endereço do PC sempre aparece em vermelho
@@ -140,7 +139,7 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
       }
     }
     ImVec2 fixedSize(600, 400);
-    ImGui::SetNextWindowSize(fixedSize, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(fixedSize, ImGuiCond_Always);
     ImGui::Begin("Editor de memória", &memEdit.Open,
                  ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
     memEdit.DrawContents(buffer, bufferSize, 0x0000);
