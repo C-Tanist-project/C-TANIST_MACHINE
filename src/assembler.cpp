@@ -1,5 +1,9 @@
 #include "assembler.hpp"
 
+#include <fstream>
+#include <iostream>
+#include <string>
+
 Assembler::Assembler(const std::string &asmFilePath,
                      const std::string &objFilePath,
                      const std::string &lstFilePath) {
@@ -12,17 +16,23 @@ Assembler::Assembler(const std::string &asmFilePath,
 
 AssemblerExitCode Assembler::Assemble() {
   this->finalExitCode = this->FirstPass();
-  if (this->finalExitCode != SUCCESS)
-    return finalExitCode;
+  if (this->finalExitCode != SUCCESS) return finalExitCode;
   this->finalExitCode = this->SecondPass();
   return finalExitCode;
 }
 
 AssemblerExitCode Assembler::FirstPass() {
   AssemblerExitCode exitCode = SUCCESS;
-  // faz a primeira passagem
+  locationCounter = 0;
+  lineCounter = 0;
+  bool FoundEnd = false;
+  symbolTable.clear();
+  listingLines.clear();
+  listingErrors.clear();
 
-  return exitCode;
+  std::ifstream in(asmFilePath);
+  if (!in) {
+  }
 }
 
 AssemblerExitCode Assembler::SecondPass() {
