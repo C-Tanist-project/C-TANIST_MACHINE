@@ -7,25 +7,6 @@
 #include <windows.h>
 #endif
 
-// Função auxiliar para converter uma string UTF-8 para uma wstring (UTF-16) no
-// Windows
-#ifdef _WIN32
-std::wstring Utf8ToWstring(const std::string &utf8_str) {
-  if (utf8_str.empty()) {
-    return std::wstring();
-  }
-  int size_needed = MultiByteToWideChar(CP_UTF8, 0, &utf8_str[0],
-                                        (int)utf8_str.size(), NULL, 0);
-  if (size_needed == 0) {
-    return std::wstring();
-  }
-  std::wstring wstr_to(size_needed, 0);
-  MultiByteToWideChar(CP_UTF8, 0, &utf8_str[0], (int)utf8_str.size(),
-                      &wstr_to[0], size_needed);
-  return wstr_to;
-}
-#endif
-
 // REWRITEBUFFER: Função que trata a sobrescrição do buffer de entrada ao
 // carregar arquivos no inspetor.
 void RewriteBuffer(const std::filesystem::path currentPath,
@@ -300,13 +281,8 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
     if (ImGuiFileDialog::Instance()->IsOk()) {
       std::string filePathName;
       filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-#ifdef _WIN32
-      std::wstring widePathName = Utf8ToWstring(filePathName);
-      currentPath = std::filesystem::path(widePathName);
-#else
-      currentPath = std::filesystem::path(filePathName);
-#endif
-      currentPath = std::filesystem::path();
+
+      currentPath.assign(filePathName.c_str());
 
       ImGuiFileDialog::Instance()->Close();
       openDialog = false;
