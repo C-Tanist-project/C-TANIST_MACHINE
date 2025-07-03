@@ -14,6 +14,7 @@ void RewriteBuffer(const std::filesystem::path currentPath,
 
   if (currentPath.extension().string() == ".txt") {
 #ifdef _WIN32
+    std::cout << currentPath.u8string();
     std::ifstream file(currentPath.u8string(), std::ios::in);
 #else
     std::ifstream file(currentPath, std::ios::in);
@@ -29,6 +30,7 @@ void RewriteBuffer(const std::filesystem::path currentPath,
 
   if (currentPath.extension().string() == ".bin") {
 #ifdef _WIN32
+    std::cout << currentPath.u8string();
     std::ifstream file(currentPath.u8string(), std::ios::in | std::ios::binary);
 #else
     std::ifstream file(currentPath, std::ios::in | std::ios::binary);
