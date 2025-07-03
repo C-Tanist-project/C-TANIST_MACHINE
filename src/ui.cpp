@@ -5,8 +5,6 @@
 
 // INSERIR OS WIDGETS DE VOCÊS AQUI!!!
 void RenderMainWindow(GLFWwindow *window, VMState &vm) {
-  SetupCtanistStyle();
-
   glfwPollEvents();
 
   ImGui_ImplOpenGL3_NewFrame();
@@ -27,11 +25,11 @@ void RenderMainWindow(GLFWwindow *window, VMState &vm) {
     ImGui::EndPopup();
   }
 
-  if (showControlWindow) RenderControlsWindow(showControlWindow, vm);
+  RenderControlsWindow(showControlWindow, vm);
 
-  if (showMemoryEditorWindow) RenderMemoryEditor(vm, showMemoryEditorWindow);
+  RenderMemoryEditor(vm, showMemoryEditorWindow);
 
-  if (showVMStateWindow) RenderVMState(vm, showVMStateWindow);
+  RenderVMState(vm, showVMStateWindow);
 
   ImGui::Render();
 
@@ -70,6 +68,7 @@ GLFWwindow *MainWindowSetup(const int width, const int height,
 
   glfwSwapInterval(1);  // vsync
 
+  SetupCtanistStyle();
   return window;
 }
 
