@@ -32,19 +32,67 @@ AssemblerExitCode Assembler::SecondPass() {
 }
 
 // escreve o arquivo .obj com base no vetor this->objectCode
+// Enum que define os tipos de seção do .OBJ
+enum class ObjSectionType : int16_t {
+  STACK_SIZE = 0x01,
+  INTDEF = 0x02,
+  INTUSE = 0x03,
+  RELOCATION = 0x04,
+  CODE = 0x05,
+  END = 0xFF
+};
+
 void Assembler::WriteObjectCodeFile() {
   std::ofstream objFile(this->objFilePath, std::ios::binary);
-
   if (!objFile) {
     std::cerr << "Erro ao abrir o arquivo de código objeto: "
               << this->objFilePath << std::endl;
     return;
   }
 
-  if (!this->objectCode.empty()) {
-    objFile.write(reinterpret_cast<const char *>(this->objectCode.data()),
-                  this->objectCode.size() * sizeof(int16_t));
+  // STACK_SIZE
+  objFile.put(static_cast<int16_t>(ObjSectionType::STACK_SIZE));
+  objFile.write(reinterpret_cast<const char *>(&this->stackSize),
+                sizeof(int16_t));
+
+  // INTDEF
+  objFile.put(static_cast<int16_t>(ObjSectionType::INTDEF));
+  int16_t defCount = static_cast<int16_t>(this->intDefTable.size());
+  objFile.write(reinterpret_cast<const char *>(&defCount), sizeof(int16_t));
+
+  for (const auto &[label, addr] : this->intDefTable) {
+    int16_t labelLen = static_cast<int16_t>(label.size());
+    objFile.write(reinterpret_cast<const char *>(&labelLen), sizeof(int16_t));
+    objFile.write(label.data(), labelLen);
+    objFile.write(reinterpret_cast<const char *>(&addr), sizeof(int16_t));
   }
+
+  // INTUSE
+  objFile.put(static_cast<int16_t>(ObjSectionType::INTUSE));
+  int16_t useCount = static_cast<int16_t>(this->intUseTable.size());
+  objFile.write(reinterpret_cast<const char *>(&useCount), sizeof(int16_t));
+
+  for (const auto &[label, addresses] : this->intUseTable) {
+    int16_t labelLen = static_cast<int16_t>(label.size());
+    objFile.write(reinterpret_cast<const char *>(&labelLen), sizeof(int16_t));
+    objFile.write(label.data(), labelLen);
+
+    int16_t addrCount = static_cast<int16_t>(addresses.size());
+    objFile.write(reinterpret_cast<const char *>(&addrCount), sizeof(int16_t));
+    for (int16_t addr : addresses) {
+      objFile.write(reinterpret_cast<const char *>(&addr), sizeof(int16_t));
+    }
+  }
+
+  // CODE
+  objFile.put(static_cast<int16_t>(ObjSectionType::CODE));
+  int16_t codeSize = static_cast<int16_t>(this->objectCode.size());
+  objFile.write(reinterpret_cast<const char *>(&codeSize), sizeof(int16_t));
+  objFile.write(reinterpret_cast<const char *>(this->objectCode.data()),
+                this->objectCode.size() * sizeof(int16_t));
+
+  // END
+  objFile.put(static_cast<int16_t>(ObjSectionType::END));
 
   objFile.close();
 }

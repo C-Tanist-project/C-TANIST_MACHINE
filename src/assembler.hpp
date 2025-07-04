@@ -66,6 +66,12 @@ class Assembler {
   // inserir erros de montagem aqui (não sei se precisa ser um vetor)
   std::vector<ListingError> listingErrors;
 
+  std::unordered_map<std::string, int16_t>
+      intDefTable;  // tabela de simbolos definidos no modulo
+  std::unordered_map<std::string, std::vector<int16_t>>
+      intUseTable;        // tabela de simbolos usados no modulo
+  int16_t stackSize = 0;  // tamanho da pilha
+
   AssemblerExitCode FirstPass();
   AssemblerExitCode SecondPass();
 
