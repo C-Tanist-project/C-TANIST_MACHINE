@@ -1,12 +1,18 @@
-﻿#include "src/ui.hpp"
-#include <bitset>
+﻿#include <bitset>
+#include <wchar.h>
+
+#include "src/ui.hpp"
+#include "src/vm.hpp"
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 // REWRITEBUFFER: Função que trata a sobrescrição do buffer de entrada ao
 // carregar arquivos no inspetor.
 void RewriteBuffer(const std::filesystem::path currentPath,
                    const bool shouldWipeBuffer, int16_t *buffer,
                    size_t bufferSize) {
-
   if (shouldWipeBuffer) {
     memset(buffer, 0, bufferSize);
   }
@@ -52,7 +58,6 @@ bool CustomHighlights(const ImU8 *mem, size_t offset, void *userData) {
   }
 
   return (offset >= pairStart && offset <= pairEnd);
-  ;
 }
 
 // Um extra legal: O endereço do PC sempre aparece em vermelho
@@ -71,7 +76,7 @@ ImU32 CustomBGColor(const ImU8 *mem, size_t offset, void *userData) {
     pairEnd = current + 1;
   }
 
-  if (offset >= (pc * 2) && offset <= (pc * 2) + 1) {
+  if (offset >= ((size_t)pc * 2) && offset <= ((size_t)pc * 2) + 1) {
     return IM_COL32(255, 0, 0, 50);
   } else if (offset >= pairStart && offset <= pairEnd) {
     return data->HighlightColor;
@@ -79,7 +84,7 @@ ImU32 CustomBGColor(const ImU8 *mem, size_t offset, void *userData) {
   return IM_COL32(0, 0, 0, 0);
 }
 
-void RenderMemoryEditor(VMState &vm) {
+void RenderMemoryEditor(VMState &vm, bool &window) {
   static MemoryEditor memEdit;
   static HighlightData highlightData;
   highlightData.memEdit = &memEdit;
@@ -115,10 +120,11 @@ void RenderMemoryEditor(VMState &vm) {
   memEdit.HighlightFn = CustomHighlights; // ditto
   memEdit.BgColorFn = CustomBGColor;
   memEdit.UserData =
-      &highlightData; // Utiizado em CustomHighlights: é uma struct que contém o
-                      // PC atual e o estado do proprio memEdit
+      &highlightData; // Utiizado em CustomHighlights: é uma struct que contém
+                      // o PC atual e o estado do proprio memEdit
   memEdit.ReadOnly = vm.isRunning; // só deixa editar se a VM não tá rodando
 
+  memEdit.Open = window;
   if (memEdit.Open) {
     // ATENÇÃO AQUI:
     // Pra melhorar o desempenho (não ter um memcpy a cada frame) eu implementei
@@ -138,7 +144,10 @@ void RenderMemoryEditor(VMState &vm) {
         buffer[updatedAddress] = vm.memory[updatedAddress];
       }
     }
-    ImGui::Begin("Memory Editor", &memEdit.Open);
+    ImVec2 fixedSize(600, 400);
+    ImGui::SetNextWindowSize(fixedSize, ImGuiCond_Always);
+    ImGui::Begin("Editor de memória", &memEdit.Open,
+                 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
     memEdit.DrawContents(buffer, bufferSize, 0x0000);
 
     ImGui::Separator();
@@ -191,11 +200,11 @@ void RenderMemoryEditor(VMState &vm) {
     // Botão STORE
     // Salva no vetor da VM as modifiações feitas no buffer
 
-    ImVec2 buttonSize = ImVec2(50, 30);
+    ImVec2 buttonSize = ImVec2(65, 30);
     ImVec2 available = ImGui::GetContentRegionAvail();
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - buttonSize.x);
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + available.y - buttonSize.y);
-    if (ImGui::Button("Store", buttonSize)) {
+    if (ImGui::Button("Salvar", buttonSize)) {
       memcpy(&vm.memory, buffer, dataSize);
     }
 
@@ -206,7 +215,7 @@ void RenderMemoryEditor(VMState &vm) {
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - buttonSize.x -
                          70);
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + available.y - buttonSize.y);
-    if (ImGui::Button("Load", buttonSize)) {
+    if (ImGui::Button("Carregar", buttonSize)) {
       openDialog = true;
     }
 
@@ -220,29 +229,33 @@ void RenderMemoryEditor(VMState &vm) {
     // está no buffer; Wipe limpa o buffer antes de escrever o arquivo e Cancel
     // cancela (duh) a operação de escrita.
     if (openPopup) {
-      ImGui::OpenPopup("ClearBuffer");
+      ImGui::OpenPopup("##LimparBufferPopup");
       openPopup = false;
     }
 
-    if (ImGui::BeginPopupModal("ClearBuffer", NULL,
+    if (ImGui::BeginPopupModal("##LimparBufferPopup", NULL,
                                ImGuiWindowFlags_AlwaysAutoResize)) {
-      if (ImGui::Button("Wipe")) {
+      ImGui::Text("Deseja limpar o buffer antes de sobrescrever?");
+      ImGui::NewLine();
+      ImGui::SetCursorPosX(65);
+      if (ImGui::Button("Sim, limpar e sobrescrever", ImVec2(200.0f, 0))) {
         RewriteBuffer(currentPath, true, buffer, 500);
         ImGui::CloseCurrentPopup();
       }
-
-      if (ImGui::Button("Overwrite")) {
+      ImGui::SetCursorPosX(65);
+      if (ImGui::Button("Não, apenas sobrescrever", ImVec2(200.0f, 0))) {
         RewriteBuffer(currentPath, false, buffer, 500);
         ImGui::CloseCurrentPopup();
       }
-
-      if (ImGui::Button("Cancel")) {
+      ImGui::SetCursorPosX(115);
+      if (ImGui::Button("Cancelar", ImVec2(100.0f, 0))) {
         ImGui::CloseCurrentPopup();
       }
       ImGui::EndPopup();
     }
+    ImGui::End();
+    window = memEdit.Open;
   }
-  ImGui::End();
 
   // Janela de seleção de arquivos
   if (openDialog) {
@@ -268,8 +281,14 @@ void RenderMemoryEditor(VMState &vm) {
     // popup de modo de escrita.
     if (ImGuiFileDialog::Instance()->IsOk()) {
       std::string filePathName;
+
       filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+
+#ifdef _WIN32
+      currentPath.assign(IGFD::Utils::UTF8Decode(filePathName));
+#else
       currentPath.assign(filePathName);
+#endif
 
       ImGuiFileDialog::Instance()->Close();
       openDialog = false;

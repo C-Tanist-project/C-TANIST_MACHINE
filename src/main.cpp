@@ -47,6 +47,8 @@ int main(int argc, char *argv[]) {
 
   std::cout << std::endl;
 
+  SetupCtanistStyle();
+
   while (!glfwWindowShouldClose(window)) {
     RenderMainWindow(window, vm);
   }

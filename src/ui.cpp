@@ -1,7 +1,6 @@
 #include "ui.hpp"
-
 #include "external/codicon_hex.h"
-#include "vm.hpp"
+#include "types.hpp"
 
 // INSERIR OS WIDGETS DE VOCÊS AQUI!!!
 void RenderMainWindow(GLFWwindow *window, VMState &vm) {
@@ -12,14 +11,28 @@ void RenderMainWindow(GLFWwindow *window, VMState &vm) {
   ImGui_ImplGlfw_NewFrame();
 
   ImGui::NewFrame();
-
   // Renderização começa aqui
-  static bool showControlWindow = true;
+  static bool showControlWindow = false;
+  static bool showMemoryEditorWindow = false;
+  static bool showVMStateWindow = false;
+  static bool showConsoleWindow = false;
+
+  // Menu de contexto para abrir ou fechar as janelas
+  if (ImGui::BeginPopupContextVoid("MenuJanelas")) {
+    ImGui::MenuItem("Controles da VM", NULL, &showControlWindow);
+    ImGui::MenuItem("Editor de Memória", NULL, &showMemoryEditorWindow);
+    ImGui::MenuItem("Registradores", NULL, &showVMStateWindow);
+    ImGui::MenuItem("Console", NULL, &showConsoleWindow);
+    ImGui::EndPopup();
+  }
 
   RenderControlsWindow(showControlWindow, vm);
-  RenderMemoryEditor(vm);
-  RenderVMState(vm);
-  RenderConsoleWindow(vm);
+
+  RenderMemoryEditor(vm, showMemoryEditorWindow);
+
+  RenderVMState(vm, showVMStateWindow);
+
+  RenderConsoleWindow(vm, showConsoleWindow);
 
   ImGui::Render();
 
@@ -56,7 +69,7 @@ GLFWwindow *MainWindowSetup(const int width, const int height,
 
   glfwMakeContextCurrent(window);
 
-  glfwSwapInterval(1);  // vsync
+  glfwSwapInterval(1); // vsync
 
   return window;
 }
@@ -112,4 +125,51 @@ void WindowCleanup(GLFWwindow *window) {
   glfwDestroyWindow(window);
 
   glfwTerminate();
+}
+
+// altera o esquema de cores global do imgui
+void SetupCtanistStyle() {
+  ImGuiStyle &style = ImGui::GetStyle();
+  ImVec4 *colors = style.Colors;
+
+  colors[ImGuiCol_Text] = ImVec4(1.00f, 0.85f, 0.85f, 1.00f);
+  colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.25f, 0.25f, 1.00f);
+  colors[ImGuiCol_WindowBg] = ImVec4(0.05f, 0.05f, 0.05f, 1.00f);
+  colors[ImGuiCol_ChildBg] = ImVec4(0.05f, 0.05f, 0.05f, 1.00f);
+  colors[ImGuiCol_PopupBg] = ImVec4(0.10f, 0.05f, 0.05f, 1.00f);
+  colors[ImGuiCol_Border] = ImVec4(0.40f, 0.00f, 0.00f, 0.50f);
+  colors[ImGuiCol_FrameBg] = ImVec4(0.25f, 0.00f, 0.00f, 1.00f);
+  colors[ImGuiCol_FrameBgHovered] = ImVec4(0.45f, 0.05f, 0.05f, 1.00f);
+  colors[ImGuiCol_FrameBgActive] = ImVec4(0.70f, 0.15f, 0.15f, 1.00f);
+  colors[ImGuiCol_TitleBg] = ImVec4(0.30f, 0.00f, 0.00f, 1.00f);
+  colors[ImGuiCol_TitleBgActive] = ImVec4(0.45f, 0.00f, 0.00f, 1.00f);
+  colors[ImGuiCol_MenuBarBg] = ImVec4(0.15f, 0.00f, 0.00f, 1.00f);
+  colors[ImGuiCol_ScrollbarBg] = ImVec4(0.10f, 0.00f, 0.00f, 0.60f);
+  colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.35f, 0.00f, 0.00f, 0.80f);
+  colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.55f, 0.10f, 0.10f, 0.90f);
+  colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.75f, 0.20f, 0.20f, 1.00f);
+  colors[ImGuiCol_CheckMark] = ImVec4(1.00f, 0.40f, 0.40f, 1.00f);
+  colors[ImGuiCol_SliderGrab] = ImVec4(0.90f, 0.40f, 0.40f, 1.00f);
+  colors[ImGuiCol_SliderGrabActive] = ImVec4(1.00f, 0.55f, 0.55f, 1.00f);
+  colors[ImGuiCol_Button] = ImVec4(0.40f, 0.00f, 0.00f, 1.00f);
+  colors[ImGuiCol_ButtonHovered] = ImVec4(0.60f, 0.10f, 0.10f, 1.00f);
+  colors[ImGuiCol_ButtonActive] = ImVec4(0.80f, 0.20f, 0.20f, 1.00f);
+  colors[ImGuiCol_Header] = ImVec4(0.45f, 0.00f, 0.00f, 1.00f);
+  colors[ImGuiCol_HeaderHovered] = ImVec4(0.65f, 0.10f, 0.10f, 1.00f);
+  colors[ImGuiCol_HeaderActive] = ImVec4(0.85f, 0.20f, 0.20f, 1.00f);
+  colors[ImGuiCol_Separator] = ImVec4(0.40f, 0.00f, 0.00f, 1.00f);
+  colors[ImGuiCol_ResizeGrip] = ImVec4(0.60f, 0.00f, 0.00f, 0.70f);
+  colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.80f, 0.20f, 0.20f, 0.90f);
+  colors[ImGuiCol_ResizeGripActive] = ImVec4(1.00f, 0.40f, 0.40f, 1.00f);
+  colors[ImGuiCol_Tab] = ImVec4(0.30f, 0.00f, 0.00f, 1.00f);
+  colors[ImGuiCol_TabHovered] = ImVec4(0.50f, 0.10f, 0.10f, 1.00f);
+  colors[ImGuiCol_TabActive] = ImVec4(0.70f, 0.15f, 0.15f, 1.00f);
+  colors[ImGuiCol_TabUnfocused] = ImVec4(0.20f, 0.00f, 0.00f, 1.00f);
+  colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.35f, 0.00f, 0.00f, 1.00f);
+
+  style.FrameRounding = 4.0f;
+  style.GrabRounding = 4.0f;
+  style.WindowRounding = 2.0f;
+  style.ScrollbarRounding = 3.0f;
+  style.FramePadding = ImVec2(6, 4);
 }
