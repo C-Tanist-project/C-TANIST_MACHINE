@@ -1,61 +1,14 @@
 #pragma once
 
-#include <atomic>
+#include "types.hpp"
+
 #include <chrono>
 #include <condition_variable>
-#include <cstdint>
 #include <cstring>
 #include <iostream>
-#include <map>
-#include <mutex>
-#include <queue>
-#include <stack>
 #include <syncstream>
 #include <thread>
 #include <variant>
-
-typedef enum { FINISH, RUN, STEP, STOP, PAUSE, CLOSE, NONE } VMControls;
-
-typedef enum { ACC, R0, R1 } Registers;
-
-typedef enum { IMMEDIATE = 0, DIRECT = 1, INDIRECT = 2 } OperandFormat;
-
-typedef enum {
-  OP_BR = 0,
-  OP_BRPOS = 1,
-  OP_ADD = 2,
-  OP_LOAD = 3,
-  OP_BRZERO = 4,
-  OP_BRNEG = 5,
-  OP_SUB = 6,
-  OP_STORE = 7,
-  OP_WRITE = 8,
-  // OP_UNHA = 9,
-  OP_DIVIDE = 10,
-  OP_STOP = 11,
-  OP_READ = 12,
-  OP_COPY = 13,
-  OP_MULT = 14,
-  OP_CALL = 15,
-  OP_RET = 16,
-  OP_PUSH = 17,
-  OP_POP = 18,
-} Opcode;
-
-typedef struct vmstatestruct {
-  int16_t memory[500] = {0};
-
-  std::atomic<float> clockSpeed = 1.0f;
-
-  int16_t pc, sp, acc, mop, ri, re, r0, r1, inputValue;
-
-  std::stack<int16_t> updatedMemoryAddresses;
-  std::queue<std::string> consoleMessages;
-  std::mutex mutex, consoleMutex;
-
-  std::atomic<bool> isHalted{false}, isRunning{false}, hasError{false},
-      waitingForInput{false};
-} VMState;
 
 void ExecuteStep(VMState &vm);
 void VMStateSetup(VMState &vm);
@@ -69,7 +22,7 @@ OperandFormat DecodeOperandFormat(int16_t instruction,
                                   unsigned char operandIdx);
 
 class Operations {
- public:
+public:
   using OpFunc = void (*)(VMState &);
   friend class VMEngine;
 
@@ -152,7 +105,7 @@ class Operations {
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     vm.acc = vm.inputValue;
-    std::cout << "Input: " << vm.inputValue << std::endl;  // teste
+    std::cout << "Input: " << vm.inputValue << std::endl; // teste
   }
 
   static void PUSH(VMState &vm) {
@@ -215,7 +168,7 @@ class Operations {
       std::lock_guard<std::mutex> lock(vm.consoleMutex);
       vm.consoleMessages.push("Output: " + std::to_string(value));
     }
-    std::cout << "Output: " << value << std::endl;  // teste
+    std::cout << "Output: " << value << std::endl; // teste
   }
 
   static void BRZERO(VMState &vm) {
@@ -242,7 +195,7 @@ class VMEngine {
   static inline std::mutex controlMutex;
   static inline std::queue<VMControls> controlQueue;
 
- public:
+public:
   void Run(VMState &vm) {
     bool finishing{false}, stepping{false}, hasInitialCopy{false},
         paused{false};
@@ -254,36 +207,36 @@ class VMEngine {
 
       if (control != NONE) {
         switch (control) {
-          case CLOSE:
-            return;
-          case FINISH:
-            finishing = true;
-          case RUN:
-            vm.isRunning.exchange(true);
-            paused = false;
-            break;
-          case STEP:
-            stepping = true;
-            paused = false;
-            break;
-          case PAUSE:
-            paused = true;
-            break;
-          case STOP:
-            vm.isRunning.exchange(false);
-            vm.isHalted.exchange(false);
-            hasInitialCopy = false;
-            stepping = false;
-            finishing = false;
-            {
-              std::lock_guard<std::mutex> lock(vm.mutex);
-              memcpy(vm.memory, buffer, sizeof(buffer));
-              vm.updatedMemoryAddresses.push(-1);
-            }
-            VMStateSetup(vm);
-            break;
-          case NONE:
-            break;
+        case CLOSE:
+          return;
+        case FINISH:
+          finishing = true;
+        case RUN:
+          vm.isRunning.exchange(true);
+          paused = false;
+          break;
+        case STEP:
+          stepping = true;
+          paused = false;
+          break;
+        case PAUSE:
+          paused = true;
+          break;
+        case STOP:
+          vm.isRunning.exchange(false);
+          vm.isHalted.exchange(false);
+          hasInitialCopy = false;
+          stepping = false;
+          finishing = false;
+          {
+            std::lock_guard<std::mutex> lock(vm.mutex);
+            memcpy(vm.memory, buffer, sizeof(buffer));
+            vm.updatedMemoryAddresses.push(-1);
+          }
+          VMStateSetup(vm);
+          break;
+        case NONE:
+          break;
         }
       }
 
@@ -322,10 +275,11 @@ class VMEngine {
     }
   }
 
- private:
+private:
   VMControls GetNextCommand() {
     std::lock_guard<std::mutex> lock(controlMutex);
-    if (controlQueue.empty()) return NONE;
+    if (controlQueue.empty())
+      return NONE;
     auto command = controlQueue.front();
     controlQueue.pop();
     return command;

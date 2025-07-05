@@ -1,4 +1,5 @@
 #include "src/ui.hpp"
+#include "src/vm.hpp"
 
 // O novo modelo de comunicação UI->VM se livra daquele espaguete de atomics.
 // Agora é baseado em variáveis de condição. Estou aproveitando a chamada para o

@@ -1,6 +1,7 @@
 #include "src/ui.hpp"
+#include "src/vm.hpp"
 
-void RenderConsoleWindow(VMState& vm, bool& window) {
+void RenderConsoleWindow(VMState &vm, bool &window) {
   static int inputValue = 0;
   static bool shouldFocusInput = false;
   static std::vector<std::string> consoleHistory;
@@ -23,7 +24,7 @@ void RenderConsoleWindow(VMState& vm, bool& window) {
                         ImGuiWindowFlags_HorizontalScrollbar);
 
       // mostra as mensagens do histórico
-      for (const auto& message : consoleHistory) {
+      for (const auto &message : consoleHistory) {
         ImGui::TextWrapped("%s", message.c_str());
       }
 

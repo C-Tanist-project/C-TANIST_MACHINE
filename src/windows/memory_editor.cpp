@@ -2,6 +2,7 @@
 #include <wchar.h>
 
 #include "src/ui.hpp"
+#include "src/vm.hpp"
 
 #ifdef _WIN32
 #include <windows.h>

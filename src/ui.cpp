@@ -1,7 +1,6 @@
 #include "ui.hpp"
-
 #include "external/codicon_hex.h"
-#include "vm.hpp"
+#include "types.hpp"
 
 // INSERIR OS WIDGETS DE VOCÊS AQUI!!!
 void RenderMainWindow(GLFWwindow *window, VMState &vm) {
@@ -70,7 +69,7 @@ GLFWwindow *MainWindowSetup(const int width, const int height,
 
   glfwMakeContextCurrent(window);
 
-  glfwSwapInterval(1);  // vsync
+  glfwSwapInterval(1); // vsync
 
   return window;
 }
