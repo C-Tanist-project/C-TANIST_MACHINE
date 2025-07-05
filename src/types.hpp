@@ -50,3 +50,26 @@ typedef enum {
   OP_PUSH = 17,
   OP_POP = 18,
 } Opcode;
+
+typedef enum {
+  SUCCESS = 0,        // DEU BOM!
+  INVALID_CHARACTER,  // lexema inválido (só vale ASCII? qq o ferrugem quer?)
+  LINE_OVER_80_CHARACTERS,  // linha muito longa (+80 chars)
+  INVALID_DIGIT,        // caracter inválido para a base escolhida (ex: "2" bin)
+  UNEXPECTED_EOL,       // delimitador de fim de instrução inválido
+  OUT_OF_BOUNDS,        // valor maior do que cabe em int16_t
+  SYNTAX_ERROR,         // falta/excesso de operandos, label mal formada
+  SYMBOL_REDEFINITION,  // referência simbólica com mais de uma definição
+  SYMBOL_UNDEFINED,     // referência simbólica não definida
+  INVALID_INSTRUCTION,  // mnemônico não corresponde a nenhuma instrução
+  NO_END,               // faltou "END" no programa
+} AssemblerExitCode;
+
+enum class ObjSectionType : int16_t {
+  STACK_SIZE = 0x01,
+  INTDEF = 0x02,
+  INTUSE = 0x03,
+  RELOCATION = 0x04,
+  CODE = 0x05,
+  END = 0xFF
+};

@@ -1,22 +1,12 @@
+#include <fstream>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
-typedef enum {
-  SUCCESS = 0,       // DEU BOM!
-  INVALID_CHARACTER, // lexema inválido (só vale ASCII? qq o ferrugem quer?)
-  LINE_OVER_80_CHARACTERS, // linha muito longa (+80 chars)
-  INVALID_DIGIT,       // caracter inválido para a base escolhida (ex: "2" bin)
-  UNEXPECTED_EOL,      // delimitador de fim de instrução inválido
-  OUT_OF_BOUNDS,       // valor maior do que cabe em int16_t
-  SYNTAX_ERROR,        // falta/excesso de operandos, label mal formada
-  SYMBOL_REDEFINITION, // referência simbólica com mais de uma definição
-  SYMBOL_UNDEFINED,    // referência simbólica não definida
-  INVALID_INSTRUCTION, // mnemônico não corresponde a nenhuma instrução
-  NO_END,              // faltou "END" no programa
-} AssemblerExitCode;
+#include "types.hpp"
 
 struct ListingLine {
   int16_t address;
@@ -36,7 +26,7 @@ struct AssemblerSymbolData {
 };
 
 class Assembler {
-private:
+ private:
   static inline const std::unordered_set<std::string> assemblerInstructions = {
       // instruções de máquina
       "ADD", "BR", "BRNEG", "BRPOS", "BRZERO", "CALL", "COPY", "DIVIDE", "LOAD",
@@ -64,10 +54,16 @@ private:
   // inserir erros de montagem aqui (não sei se precisa ser um vetor)
   std::vector<ListingError> listingErrors;
 
+  std::unordered_map<std::string, int16_t>
+      intDefTable;  // tabela de simbolos definidos no modulo
+  std::unordered_map<std::string, std::vector<int16_t>>
+      intUseTable;        // tabela de simbolos usados no modulo
+  int16_t stackSize = 0;  // tamanho da pilha
+
   AssemblerExitCode FirstPass();
   AssemblerExitCode SecondPass();
 
-public:
+ public:
   Assembler(const std::string &asmFilePath, const std::string &objFilePath,
             const std::string &lstFilePath);
   AssemblerExitCode Assemble();
