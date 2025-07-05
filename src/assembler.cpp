@@ -1,7 +1,5 @@
 #include "assembler.hpp"
 
-#include "types.hpp"
-
 Assembler::Assembler(const std::string &asmFilePath,
                      const std::string &objFilePath,
                      const std::string &lstFilePath) {

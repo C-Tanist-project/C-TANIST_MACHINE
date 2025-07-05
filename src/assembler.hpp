@@ -6,6 +6,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "types.hpp"
+
 struct ListingLine {
   int16_t address;
   std::string generatedCode;
