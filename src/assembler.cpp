@@ -1,5 +1,7 @@
 #include "assembler.hpp"
 
+#include "types.hpp"
+
 Assembler::Assembler(const std::string &asmFilePath,
                      const std::string &objFilePath,
                      const std::string &lstFilePath) {
@@ -32,16 +34,6 @@ AssemblerExitCode Assembler::SecondPass() {
 }
 
 // escreve o arquivo .obj com base no vetor this->objectCode
-// Enum que define os tipos de seção do .OBJ
-enum class ObjSectionType : int16_t {
-  STACK_SIZE = 0x01,
-  INTDEF = 0x02,
-  INTUSE = 0x03,
-  RELOCATION = 0x04,
-  CODE = 0x05,
-  END = 0xFF
-};
-
 void Assembler::WriteObjectCodeFile() {
   std::ofstream objFile(this->objFilePath, std::ios::binary);
   if (!objFile) {

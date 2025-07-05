@@ -6,20 +6,6 @@
 #include <unordered_set>
 #include <vector>
 
-typedef enum {
-  SUCCESS = 0,        // DEU BOM!
-  INVALID_CHARACTER,  // lexema inválido (só vale ASCII? qq o ferrugem quer?)
-  LINE_OVER_80_CHARACTERS,  // linha muito longa (+80 chars)
-  INVALID_DIGIT,        // caracter inválido para a base escolhida (ex: "2" bin)
-  UNEXPECTED_EOL,       // delimitador de fim de instrução inválido
-  OUT_OF_BOUNDS,        // valor maior do que cabe em int16_t
-  SYNTAX_ERROR,         // falta/excesso de operandos, label mal formada
-  SYMBOL_REDEFINITION,  // referência simbólica com mais de uma definição
-  SYMBOL_UNDEFINED,     // referência simbólica não definida
-  INVALID_INSTRUCTION,  // mnemônico não corresponde a nenhuma instrução
-  NO_END,               // faltou "END" no programa
-} AssemblerExitCode;
-
 struct ListingLine {
   int16_t address;
   std::string generatedCode;
