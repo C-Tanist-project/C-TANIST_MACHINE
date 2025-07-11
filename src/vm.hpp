@@ -144,12 +144,12 @@ public:
 
   static void SUB(VMState &vm) {
     int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
-    vm.acc -= vm.memory[operand];
+    vm.acc -= operand;  // era vm.acc -= vm.memory[operand];
   }
 
   static void LOAD(VMState &vm) {
     int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
-    vm.acc = vm.memory[operand];
+    vm.acc = operand;  // antes era vm.acc = vm.memory[operand];
   }
 
   static void STORE(VMState &vm) {
@@ -162,13 +162,15 @@ public:
   }
 
   static void WRITE(VMState &vm) {
-    int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
-    int16_t value = vm.memory[operand];
+    int16_t address = FetchValue(vm.memory[vm.pc], 0, vm);
+    int16_t value = vm.memory[address];
     {
       std::lock_guard<std::mutex> lock(vm.consoleMutex);
       vm.consoleMessages.push("Output: " + std::to_string(value));
     }
-    std::cout << "Output: " << value << std::endl; // teste
+
+    std::cout << "Output: " << value << std::endl;
+
   }
 
   static void BRZERO(VMState &vm) {

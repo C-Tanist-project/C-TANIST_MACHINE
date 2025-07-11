@@ -1,4 +1,5 @@
-﻿#include <bitset>
+#include <bitset>
+
 #include <wchar.h>
 
 #include "src/ui.hpp"
@@ -7,6 +8,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
 
 // REWRITEBUFFER: Função que trata a sobrescrição do buffer de entrada ao
 // carregar arquivos no inspetor.
@@ -109,20 +111,21 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
 
   // Opções do editor de memória
   memEdit.OptShowOptions =
-      false; // Desabilita o menu de opções (não ajuda muito)
-  memEdit.OptShowDataPreview = false; // Desabilita o menu de preview (versão
-                                      // customizada disso já foi implementada)
-  memEdit.OptMidColsCount = 2;    // Quebra os 4 bytes em conjuntos de 16 bits
-  memEdit.Cols = 8;               // 4 bytes
-  memEdit.OptAddrDigitsCount = 4; // Mostra sempre 4 bytes no endereçamento
+      false;  // Desabilita o menu de opções (não ajuda muito)
+  memEdit.OptShowDataPreview = false;  // Desabilita o menu de preview (versão
+                                       // customizada disso já foi implementada)
+  memEdit.OptMidColsCount = 2;     // Quebra os 4 bytes em conjuntos de 16 bits
+  memEdit.Cols = 8;                // 4 bytes
+  memEdit.OptAddrDigitsCount = 4;  // Mostra sempre 4 bytes no endereçamento
   memEdit.OptFooterExtraHeight =
-      120.0; // Espaço extra no fim do módulo para widgets extra
-  memEdit.HighlightFn = CustomHighlights; // ditto
+      120.0;  // Espaço extra no fim do módulo para widgets extra
+  memEdit.HighlightFn = CustomHighlights;  // ditto
   memEdit.BgColorFn = CustomBGColor;
   memEdit.UserData =
-      &highlightData; // Utiizado em CustomHighlights: é uma struct que contém
-                      // o PC atual e o estado do proprio memEdit
-  memEdit.ReadOnly = vm.isRunning; // só deixa editar se a VM não tá rodando
+      &highlightData;  // Utiizado em CustomHighlights: é uma struct que contém
+                       // o PC atual e o estado do proprio memEdit
+  memEdit.ReadOnly = vm.isRunning;  // só deixa editar se a VM não tá rodando
+
 
   memEdit.Open = window;
   if (memEdit.Open) {
