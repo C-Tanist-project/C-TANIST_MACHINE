@@ -1,6 +1,14 @@
-﻿#include <bitset>
+#include <bitset>
+
+#include <wchar.h>
 
 #include "src/ui.hpp"
+#include "src/vm.hpp"
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 
 // REWRITEBUFFER: Função que trata a sobrescrição do buffer de entrada ao
 // carregar arquivos no inspetor.
@@ -117,6 +125,7 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
       &highlightData;  // Utiizado em CustomHighlights: é uma struct que contém
                        // o PC atual e o estado do proprio memEdit
   memEdit.ReadOnly = vm.isRunning;  // só deixa editar se a VM não tá rodando
+
 
   memEdit.Open = window;
   if (memEdit.Open) {
@@ -275,8 +284,14 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
     // popup de modo de escrita.
     if (ImGuiFileDialog::Instance()->IsOk()) {
       std::string filePathName;
+
       filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+
+#ifdef _WIN32
+      currentPath.assign(IGFD::Utils::UTF8Decode(filePathName));
+#else
       currentPath.assign(filePathName);
+#endif
 
       ImGuiFileDialog::Instance()->Close();
       openDialog = false;

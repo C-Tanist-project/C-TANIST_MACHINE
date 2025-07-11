@@ -1,3 +1,4 @@
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <thread>
@@ -6,6 +7,12 @@
 #include "vm.hpp"
 
 int main(int argc, char *argv[]) {
+
+  if (argc > 1 && strcmp(argv[1], "assemble") == 0) {
+
+    return 0;
+  }
+
   Operations::InitializeMap();
   VMEngine engine;
   VMState vm;

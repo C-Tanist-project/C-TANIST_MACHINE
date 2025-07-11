@@ -6,6 +6,7 @@ build/
 compile_commands.json
 *.ini
 *.exe
+*.obj
 subprojects/glfw-*
 subprojects/imgui-*
 subprojects/packagecache
