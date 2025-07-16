@@ -71,6 +71,7 @@ class Assembler {
   std::string lstFilePath;
 
   // tabela de símbolos
+  std::unordered_map<std::string, AssemblerSymbolData> symbolTable;
   // código de máquina que vai entrar na memória
   std::vector<int16_t> objectCode;
   // código gerado | código fonte, ver formato na especificação
@@ -79,11 +80,9 @@ class Assembler {
   std::vector<ListingError> listingErrors;
 
   AssemblerExitCode SecondPass();
+  AssemblerExitCode FirstPass();
 
  public:
-  std::unordered_map<std::string, AssemblerSymbolData>
-      symbolTable;                // publico para teste
-  AssemblerExitCode FirstPass();  // publico para teste
   Assembler(const std::string &asmFilePath, const std::string &objFilePath,
             const std::string &lstFilePath);
   AssemblerExitCode Assemble();
