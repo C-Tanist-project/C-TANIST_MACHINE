@@ -3,17 +3,32 @@
 #include <iostream>
 #include <thread>
 
+#include "assembler.hpp"
 #include "ui.hpp"
 #include "vm.hpp"
 
 int main(int argc, char *argv[]) {
-
   if (argc > 1 && strcmp(argv[1], "assemble") == 0) {
+    std::cout << "CWD = " << std::filesystem::current_path() << '\n';
+    std::string test =
+        "/home/vitor/Área_de_trabalho/C-TANIST_MACHINE/tests/testFirstPass.asm";
+    printf("Assembling %s\n", test.c_str());
+    std::string objFilePath = "../tests/testFirstPass.obj";
+    std::string lstFilePath = "../tests/testFirstPass.lst";
 
+    Assembler assembler(test, objFilePath, lstFilePath);
+    AssemblerExitCode exitCode = assembler.FirstPass();
+
+    std::cout << "Exit code: " << exitCode << std::endl;
+
+    for (auto &[symbol, data] : assembler.symbolTable) {
+      std::cout << "Symbol: " << symbol << ", Address: " << data.address
+                << ", Defined: " << (data.defined ? "Yes" : "No") << std::endl;
+    }
     return 0;
   }
 
-  Operations::InitializeMap();
+  // Operations::InitializeMap();
   VMEngine engine;
   VMState vm;
 

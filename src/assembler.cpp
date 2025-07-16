@@ -25,8 +25,6 @@ AssemblerExitCode Assembler::Assemble() {
 }
 
 AssemblerExitCode Assembler::FirstPass() {
-  AssemblerExitCode exitCode = SUCCESS;
-
   locationCounter = 0;
   lineCounter = 0;
 
@@ -34,12 +32,11 @@ AssemblerExitCode Assembler::FirstPass() {
   bool foundEnd = false;
 
   symbolTable.clear();
-  listingLines.clear();
-  listingErrors.clear();
 
   std::ifstream in(asmFilePath);
   if (!in) {
     std::cerr << "Error: Could not open file " << asmFilePath << std::endl;
+    return INVALID_CHARACTER;
   }
 
   std::string line;
@@ -49,36 +46,14 @@ AssemblerExitCode Assembler::FirstPass() {
     ParseResult parseResult =
         ParseLine(line, static_cast<int16_t>(lineCounter));
 
-    // Inserindo erros da linha
-    listingErrors.insert(listingErrors.end(), parseResult.diagnostics.begin(),
-                         parseResult.diagnostics.end());
-
-    if (parseResult.exitCode != SUCCESS && exitCode == SUCCESS) {
-      exitCode = parseResult.exitCode;
+    if (parseResult.exitCode != SUCCESS) {
+      return parseResult.exitCode;
     }
-
-    listingLines.push_back(ListingLine{static_cast<int16_t>(locationCounter),
-                                       "", static_cast<int16_t>(lineCounter),
-                                       line});
 
     Instruction &instruction = parseResult.instruction;
 
     if (instruction.isComment || instruction.mnemonic.empty()) {
       continue;
-    }
-
-    // Tratando Labels
-    if (!instruction.label.empty()) {
-      auto &sym = symbolTable[instruction.label];
-      if (sym.defined) {
-        listingErrors.push_back(
-            ListingError{static_cast<int16_t>(lineCounter),
-                         "Symbol redefinition: " + instruction.label});
-        if (exitCode == SUCCESS) exitCode = SYMBOL_REDEFINITION;
-      } else {
-        sym.address = static_cast<int16_t>(locationCounter);
-        sym.defined = true;
-      }
     }
 
     // Tratando mnemonics
@@ -87,37 +62,100 @@ AssemblerExitCode Assembler::FirstPass() {
                    ::toupper);
 
     if (!assemblerInstructions.count(mnemonic)) {
-      listingErrors.push_back(
-          ListingError{static_cast<int16_t>(lineCounter),
-                       "Invalid mnemonic: " + instruction.mnemonic});
-      if (exitCode == SUCCESS) exitCode = INVALID_INSTRUCTION;
-      continue;
+      std::cerr << "Error: Invalid instruction " << mnemonic << " at line "
+                << lineCounter << std::endl;
+      return INVALID_INSTRUCTION;
     }
 
     // Tratando pseudo-instruções
-    if (instruction.mnemonic == "START") {
-      if (instruction.operands.size() != 1) {
-        listingErrors.push_back(ListingError{static_cast<int16_t>(lineCounter),
-                                             "START requires one operand"});
-        if (exitCode == SUCCESS) exitCode = SYNTAX_ERROR;
-        continue;
+    if (mnemonic == "START") {
+      if (foundStart) {
+        std::cerr << "Error: Multiple START directives found at line "
+                  << lineCounter << std::endl;
+        return SYMBOL_REDEFINITION;
+      } else if (instruction.operands.size() != 1) {
+        std::cerr << "Error: START directive requires one operand at line "
+                  << lineCounter << std::endl;
+        return SYNTAX_ERROR;
+      } else if (foundEnd) {
+        std::cerr << "Error: START directive found after END at line "
+                  << lineCounter << std::endl;
+        return SYNTAX_ERROR;
+      } else {
+        foundStart = true;
+        locationCounter = std::stoi(instruction.operands[0]);
+      }
+
+      if (mnemonic == "END") {
+        foundEnd = true;
+      }
+
+      if (mnemonic == "CONST" || mnemonic == "SPACE") {
+        if (instruction.operands.size() != 1) {
+          std::cerr << "Error: " << mnemonic
+                    << " directive requires one operand at line " << lineCounter
+                    << std::endl;
+          return SYNTAX_ERROR;
+        }
+        locationCounter += 1;
+      }
+
+      if (mnemonic == "STACK") {
+        if (instruction.operands.size() != 1) {
+          std::cerr << "Error: STACK directive requires one operand at line "
+                    << lineCounter << std::endl;
+          return SYNTAX_ERROR;
+        }
+        locationCounter += std::stoi(instruction.operands[0]);
+      }
+
+      // Tratando instruções de máquina
+      if (mnemonic == "ADD" || mnemonic == "BR" || mnemonic == "BRNEG" ||
+          mnemonic == "BRPOS" || mnemonic == "BRZERO" || mnemonic == "CALL" ||
+          mnemonic == "DIVIDE" || mnemonic == "LOAD" || mnemonic == "MULT" ||
+          mnemonic == "READ" || mnemonic == "STORE" || mnemonic == "SUB" ||
+          mnemonic == "WRITE") {
+        if (instruction.operands.size() != 1) {
+          std::cerr << "Error: " << mnemonic
+                    << " instruction requires one operand at line "
+                    << lineCounter << std::endl;
+          return SYNTAX_ERROR;
+        }
+        locationCounter += 2;
+      }
+
+      if (mnemonic == "COPY") {
+        if (instruction.operands.size() != 2) {
+          std::cerr << "Error: COPY instruction requires two operands at line "
+                    << lineCounter << std::endl;
+          return SYNTAX_ERROR;
+        }
+        locationCounter += 3;
       }
     }
-    // Continuar tratando outras pseudo-instruções...
+
+    // Tratando Labels
+    if (!instruction.label.empty()) {
+      auto &sym = symbolTable[instruction.label];
+      if (sym.defined) {
+        std::cerr << "Error: Symbol redefinition for " << instruction.label
+                  << " at line " << lineCounter << std::endl;
+        return SYMBOL_REDEFINITION;
+      } else {
+        sym.address = static_cast<int16_t>(locationCounter);
+        sym.defined = true;
+      }
+    }
   }
+  if (!foundEnd) {
+    std::cerr << "Error: No END directive found in the program." << std::endl;
+    return NO_END;
+  }
+  return SUCCESS;
 }
 
 ParseResult ParseLine(const std::string &line, int lineNumber) {
   ParseResult result;
-
-  auto addError = [&result, lineNumber](AssemblerExitCode exitCode,
-                                        std::string errorMessage) {
-    result.diagnostics.push_back(
-        ListingError{static_cast<int16_t>(lineNumber), errorMessage});
-    if (result.exitCode == SUCCESS) {
-      result.exitCode = exitCode;
-    }
-  };
 
   if (line.empty() || line[0] == '*') {
     result.instruction.isComment = true;
@@ -125,9 +163,10 @@ ParseResult ParseLine(const std::string &line, int lineNumber) {
   }
 
   if (line.size() > 80) {
-    addError(LINE_OVER_80_CHARACTERS,
-             "Error: Line exceeds 80 characters at line " +
-                 std::to_string(lineNumber));
+    result.exitCode = LINE_OVER_80_CHARACTERS;
+    std::cerr << "Error: Line exceeds 80 characters at line " << lineNumber
+              << std::endl;
+    return result;
   }
 
   // Função auxiliar para pular espaços da linha
@@ -150,8 +189,10 @@ ParseResult ParseLine(const std::string &line, int lineNumber) {
     static const std::regex labelRegex(R"([A-Za-z_][A-Za-z0-9_]{0,7})");
 
     if (!std::regex_match(candidateLabel, labelRegex)) {
-      addError(SYNTAX_ERROR, "Error: Invalid label format at line " +
-                                 std::to_string(lineNumber));
+      result.exitCode = SYNTAX_ERROR;
+      std::cerr << "Error: Invalid label '" << candidateLabel << "' at line "
+                << lineNumber << std::endl;
+      return result;
     }
     result.instruction.label = candidateLabel;
   }
@@ -159,8 +200,8 @@ ParseResult ParseLine(const std::string &line, int lineNumber) {
   // Captura do mnemonic
   skipSpaces(idx);
   if (idx >= line.size()) {
-    addError(SYNTAX_ERROR,
-             "Error: Missing mnemonic at line " + std::to_string(lineNumber));
+    result.exitCode = SYNTAX_ERROR;
+    std::cerr << "Error: Missing mnemonic at line " << lineNumber << std::endl;
     return result;
   }
   size_t opStart = idx;
@@ -182,8 +223,9 @@ ParseResult ParseLine(const std::string &line, int lineNumber) {
   }
 
   if (result.instruction.operands.size() > 2) {
-    addError(SYNTAX_ERROR,
-             "Error: Too many operands at line " + std::to_string(lineNumber));
+    result.exitCode = SYNTAX_ERROR;
+    std::cerr << "Error: Too many operands at line " << lineNumber << std::endl;
+    return result;
   }
 
   return result;

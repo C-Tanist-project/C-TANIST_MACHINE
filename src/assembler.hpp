@@ -46,7 +46,6 @@ struct Instruction {
 struct ParseResult {
   AssemblerExitCode exitCode = SUCCESS;
   Instruction instruction;
-  std::vector<ListingError> diagnostics;
 };
 
 ParseResult ParseLine(const std::string &line, int lineNumber);
@@ -72,7 +71,6 @@ class Assembler {
   std::string lstFilePath;
 
   // tabela de símbolos
-  std::unordered_map<std::string, AssemblerSymbolData> symbolTable;
   // código de máquina que vai entrar na memória
   std::vector<int16_t> objectCode;
   // código gerado | código fonte, ver formato na especificação
@@ -80,10 +78,12 @@ class Assembler {
   // inserir erros de montagem aqui (não sei se precisa ser um vetor)
   std::vector<ListingError> listingErrors;
 
-  AssemblerExitCode FirstPass();
   AssemblerExitCode SecondPass();
 
  public:
+  std::unordered_map<std::string, AssemblerSymbolData>
+      symbolTable;                // publico para teste
+  AssemblerExitCode FirstPass();  // publico para teste
   Assembler(const std::string &asmFilePath, const std::string &objFilePath,
             const std::string &lstFilePath);
   AssemblerExitCode Assemble();
