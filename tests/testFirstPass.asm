@@ -4,3 +4,4 @@ penissss COPy Prepucio Buceta
  READ glande
 Buceta Const 3
 Prepucio Const 0
+ end
