@@ -110,7 +110,7 @@ void Assembler::WriteListingFile() {
 
   if (!this->listingErrors.empty()) {
     lstFile << "\nERROS DE COMPILAÇÃO\n";
-    for (const auto &err : this->listingErrors) {
+    for (const ListingError &err : this->listingErrors) {
       char lineStr[4];
       snprintf(lineStr, sizeof(lineStr), "%03d", err.lineNumber);
       lstFile << "Linha " << lineStr << ": " << err.error << "\n";
