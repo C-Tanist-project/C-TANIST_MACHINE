@@ -7,7 +7,7 @@ compile_commands.json
 *.ini
 *.exe
 *.obj
-*.lsm
+*.lst
 subprojects/glfw-*
 subprojects/imgui-*
 subprojects/packagecache
