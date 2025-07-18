@@ -1,6 +1,6 @@
-#include <bitset>
-
 #include <wchar.h>
+
+#include <bitset>
 
 #include "src/ui.hpp"
 #include "src/vm.hpp"
@@ -8,7 +8,6 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
-
 
 // REWRITEBUFFER: Função que trata a sobrescrição do buffer de entrada ao
 // carregar arquivos no inspetor.
@@ -126,7 +125,6 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
                        // o PC atual e o estado do proprio memEdit
   memEdit.ReadOnly = vm.isRunning;  // só deixa editar se a VM não tá rodando
 
-
   memEdit.Open = window;
   if (memEdit.Open) {
     // ATENÇÃO AQUI:
@@ -182,7 +180,9 @@ void RenderMemoryEditor(VMState &vm, bool &window) {
     // sempre em utf8. No windows, por padrão, essas strings se tornam utf-16, o
     // que quebra ao converter para a string padrão C (que é
     // o padrão que o IMGUI usa no Text())
-    std::string utf8Filename = currentPath.filename().u8string();
+    auto u8str = currentPath.filename().u8string();
+    std::string utf8Filename(reinterpret_cast<const char *>(u8str.c_str()),
+                             u8str.size());
 
     ImGui::Text("Arquivo selecionado:");
     ImGui::SameLine();
