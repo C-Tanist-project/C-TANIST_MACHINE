@@ -58,20 +58,23 @@ AssemblerExitCode Assembler::SecondPass() {
 
       if (!assemblerInstructions.contains(firstToken)) {
         lineStream >> label >> opcode >> operand1 >> operand2;
-
-        // objectCode.push_back(symbolTable[label].address);
-
       } else {
         lineStream >> opcode >> operand1 >> operand2;
       }
 
       if (opcodes.contains(opcode)) {
-        objectCode.emplace_back(opcodes[opcode]);
+        objectCode.push_back(opcodes[opcode]);
         int16_t finalOpCode = opcodes[opcode];
 
-        size_t opcodeIdx = objectCode.back();
+        size_t opcodeIdx = objectCode.size() - 1;
+        std::string generatedCodeForLst;
+        std::string sourceCodeForLst;
 
-        auto testOperand = [&](std::string &operand, int whichOne) {
+        sourceCodeForLst += opcode;
+
+        auto solveOperand = [&](std::string &operand, int whichOne) {
+          sourceCodeForLst += " ";
+          sourceCodeForLst += operand;
           if (operand.back() == 'I') {
             finalOpCode += whichOne;
             objectCode[opcodeIdx] = finalOpCode;
@@ -81,16 +84,23 @@ AssemblerExitCode Assembler::SecondPass() {
               return;
             }
             objectCode.push_back(symbolTable[operand].address);
+            generatedCodeForLst += " ";
+            generatedCodeForLst += std::to_string(symbolTable[operand].address);
             return;
 
           } else if (operand[0] == '#') {
-            if (opcode == "COPY" && whichOne == 32)
+            if (opcode == "COPY" && whichOne == 32) {
               exitCode = INVALID_CHARACTER;
-            return;
+              return;
+            }
             finalOpCode += 128;
             objectCode[opcodeIdx] = finalOpCode;
             operand = operand.substr(1);
             objectCode.push_back(static_cast<int16_t>(std::stoi(operand)));
+            generatedCodeForLst += " ";
+
+            generatedCodeForLst += std::to_string(symbolTable[operand].address);
+
             return;
 
           } else {
@@ -99,10 +109,22 @@ AssemblerExitCode Assembler::SecondPass() {
               return;
             }
             objectCode.push_back(symbolTable[operand].address);
+            generatedCodeForLst += " ";
+            generatedCodeForLst += std::to_string(symbolTable[operand].address);
           }
         };
-        if (!operand1.empty()) testOperand(operand1, 32);
-        if (!operand2.empty()) testOperand(operand2, 64);
+        if (!operand1.empty()) solveOperand(operand1, 32);
+        if (!operand2.empty()) solveOperand(operand2, 64);
+
+        ListingLine listingLine;
+        listingLine.address = opcodeIdx + 1;
+        listingLine.generatedCode =
+            std::to_string(objectCode[opcodeIdx]) + generatedCodeForLst;
+        listingLine.lineNumber = lineCounter;
+        listingLine.sourceCode = sourceCodeForLst;
+
+        listingLines.push_back(listingLine);
+
       } else if (opcode == "STACK")
         stackSize = std::stoi(operand1);
       else if (opcode == "CONST")
@@ -118,6 +140,7 @@ AssemblerExitCode Assembler::SecondPass() {
   for (int16_t e : objectCode) {
     std::cout << e << " ";
   }
+
   file.close();
   return exitCode;
 }
