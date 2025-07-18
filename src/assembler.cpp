@@ -96,24 +96,20 @@ void Assembler::WriteListingFile() {
     return;
   }
 
-  for (const ListingLine &entry : this->listingLines) {
-    char addressStr[5], codeStr[6], lineStr[4];
-
-    // Padding para manter length dos campos
-    snprintf(addressStr, sizeof(addressStr), "%04d", entry.address);
-    snprintf(codeStr, sizeof(codeStr), "%05d", std::stoi(entry.generatedCode));
-    snprintf(lineStr, sizeof(lineStr), "%03d", entry.lineNumber);
-
-    lstFile << "[" << addressStr << " " << codeStr << "] " << lineStr << " "
-            << entry.sourceCode << "\n";
+  lstFile << "\nLISTAGEM DE CÓDIGO\n";
+  for (const auto &entry : this->listingLines) {
+    lstFile << "[" << std::setw(4) << std::setfill('0') << entry.address << " "
+            << std::setw(5) << std::setfill('0')
+            << std::stoi(entry.generatedCode) << "] " << std::setw(3)
+            << std::setfill('0') << entry.lineNumber << " " << entry.sourceCode
+            << "\n";
   }
 
   if (!this->listingErrors.empty()) {
     lstFile << "\nERROS DE COMPILAÇÃO\n";
     for (const ListingError &err : this->listingErrors) {
-      char lineStr[4];
-      snprintf(lineStr, sizeof(lineStr), "%03d", err.lineNumber);
-      lstFile << "Linha " << lineStr << ": " << err.error << "\n";
+      lstFile << "Linha " << std::setw(3) << std::setfill('0') << err.lineNumber
+              << ": " << err.error << "\n";
     }
   } else {
     lstFile << "\nNENHUM ERRO DETECTADO\n";
