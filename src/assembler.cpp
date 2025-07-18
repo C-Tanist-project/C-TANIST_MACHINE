@@ -88,4 +88,30 @@ void Assembler::WriteObjectCodeFile() {
 }
 
 // escreve o arquivo .lst com this->listingLines e this->listingErrors
-void Assembler::WriteListingFile() {}
+void Assembler::WriteListingFile() {
+  std::ofstream lstFile(this->lstFilePath);
+  if (!lstFile) {
+    std::cerr << "Erro ao abrir o arquivo de listagem: " << this->lstFilePath
+              << std::endl;
+    return;
+  }
+
+  lstFile << "\nLISTAGEM DE CÓDIGO\n";
+  for (const auto &line : this->listingLines) {
+    lstFile << "[" << std::setw(5) << std::setfill('0') << line.address << " - "
+            << line.generatedCode << "] " << std::setw(3) << std::setfill('0')
+            << line.lineNumber << " - " << line.sourceCode << "\n";
+  }
+
+  if (!this->listingErrors.empty()) {
+    lstFile << "\nERROS DE COMPILAÇÃO\n";
+    for (const ListingError &err : this->listingErrors) {
+      lstFile << "Linha " << std::setw(3) << std::setfill('0') << err.lineNumber
+              << ": " << err.error << "\n";
+    }
+  } else {
+    lstFile << "\nNENHUM ERRO DETECTADO\n";
+  }
+
+  lstFile.close();
+}
