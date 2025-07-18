@@ -98,10 +98,9 @@ void Assembler::WriteListingFile() {
 
   lstFile << "\nLISTAGEM DE CÓDIGO\n";
   for (const auto &line : this->listingLines) {
-    lstFile << "[" << std::setw(4) << std::setfill('0') << line.address << " "
-            << std::setw(5) << std::setfill('0')
+    lstFile << "[" << std::setw(5) << std::setfill('0') << line.address << " - "
             << std::stoi(line.generatedCode) << "] " << std::setw(3)
-            << std::setfill('0') << line.lineNumber << " " << line.sourceCode
+            << std::setfill('0') << line.lineNumber << " - " << line.sourceCode
             << "\n";
   }
 
