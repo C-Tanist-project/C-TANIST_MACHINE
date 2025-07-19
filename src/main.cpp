@@ -58,8 +58,8 @@
 int main(int argc, char *argv[]) {
   if (argc > 1 && strcmp(argv[1], "assemble") == 0) {
     std::cout << "CWD = " << std::filesystem::current_path() << '\n';
-    std::string test =
-        "/home/vitor/Área_de_trabalho/C-TANIST_MACHINE/tests/testFirstPass.asm";
+    std::string test ="tests/testFirstPass.asm";
+    
     printf("Assembling %s\n", test.c_str());
     std::string objFilePath = "../tests/testFirstPass.obj";
     std::string lstFilePath = "../tests/testFirstPass.lst";
