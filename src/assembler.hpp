@@ -78,9 +78,7 @@ class Assembler {
 
   AssemblerExitCode FirstPass();
   AssemblerExitCode SecondPass();
-  AssemblerExitCode FirstPass();
 
- public:
  public:
   Assembler(const std::string &asmFilePath, const std::string &objFilePath,
             const std::string &lstFilePath);
