@@ -85,53 +85,54 @@ AssemblerExitCode Assembler::FirstPass() {
         foundStart = true;
         locationCounter = std::stoi(instruction.operands[0]);
       }
+    }
 
-      if (mnemonic == "END") {
-        foundEnd = true;
-      }
+    if (mnemonic == "END") {
+      foundEnd = true;
+      continue;
+    }
 
-      if (mnemonic == "CONST" || mnemonic == "SPACE") {
-        if (instruction.operands.size() != 1) {
-          std::cerr << "Error: " << mnemonic
-                    << " directive requires one operand at line " << lineCounter
-                    << std::endl;
-          return SYNTAX_ERROR;
-        }
-        locationCounter += 1;
+    if (mnemonic == "CONST" || mnemonic == "SPACE") {
+      if (instruction.operands.size() != 1) {
+        std::cerr << "Error: " << mnemonic
+                  << " directive requires one operand at line " << lineCounter
+                  << std::endl;
+        return SYNTAX_ERROR;
       }
+      locationCounter += 1;
+    }
 
-      if (mnemonic == "STACK") {
-        if (instruction.operands.size() != 1) {
-          std::cerr << "Error: STACK directive requires one operand at line "
-                    << lineCounter << std::endl;
-          return SYNTAX_ERROR;
-        }
-        locationCounter += std::stoi(instruction.operands[0]);
+    if (mnemonic == "STACK") {
+      if (instruction.operands.size() != 1) {
+        std::cerr << "Error: STACK directive requires one operand at line "
+                  << lineCounter << std::endl;
+        return SYNTAX_ERROR;
       }
+      locationCounter += std::stoi(instruction.operands[0]);
+    }
 
-      // Tratando instruções de máquina
-      if (mnemonic == "ADD" || mnemonic == "BR" || mnemonic == "BRNEG" ||
-          mnemonic == "BRPOS" || mnemonic == "BRZERO" || mnemonic == "CALL" ||
-          mnemonic == "DIVIDE" || mnemonic == "LOAD" || mnemonic == "MULT" ||
-          mnemonic == "READ" || mnemonic == "STORE" || mnemonic == "SUB" ||
-          mnemonic == "WRITE") {
-        if (instruction.operands.size() != 1) {
-          std::cerr << "Error: " << mnemonic
-                    << " instruction requires one operand at line "
-                    << lineCounter << std::endl;
-          return SYNTAX_ERROR;
-        }
-        locationCounter += 2;
+    // Tratando instruções de máquina
+    if (mnemonic == "ADD" || mnemonic == "BR" || mnemonic == "BRNEG" ||
+        mnemonic == "BRPOS" || mnemonic == "BRZERO" || mnemonic == "CALL" ||
+        mnemonic == "DIVIDE" || mnemonic == "LOAD" || mnemonic == "MULT" ||
+        mnemonic == "READ" || mnemonic == "STORE" || mnemonic == "SUB" ||
+        mnemonic == "WRITE") {
+      if (instruction.operands.size() != 1) {
+        std::cerr << "Error: " << mnemonic
+                  << " instruction requires one operand at line " << lineCounter
+                  << std::endl;
+        return SYNTAX_ERROR;
       }
+      locationCounter += 2;
+    }
 
-      if (mnemonic == "COPY") {
-        if (instruction.operands.size() != 2) {
-          std::cerr << "Error: COPY instruction requires two operands at line "
-                    << lineCounter << std::endl;
-          return SYNTAX_ERROR;
-        }
-        locationCounter += 3;
+    if (mnemonic == "COPY") {
+      if (instruction.operands.size() != 2) {
+        std::cerr << "Error: COPY instruction requires two operands at line "
+                  << lineCounter << std::endl;
+        return SYNTAX_ERROR;
       }
+      locationCounter += 3;
     }
 
     // Tratando Labels
