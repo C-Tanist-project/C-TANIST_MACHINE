@@ -1,4 +1,5 @@
 #include "src/ui.hpp"
+#include "src/vm.hpp"
 
 // O novo modelo de comunicação UI->VM se livra daquele espaguete de atomics.
 // Agora é baseado em variáveis de condição. Estou aproveitando a chamada para o
@@ -31,56 +32,56 @@ void RenderControlsWindow(bool &window, VMState &vm) {
 
   // Sinceramente eu não entendi as escolhas de layout desse módulo, então
   // tentei deixar consistente com o VMSTATE
-  if (ImGui::Begin("Controls", &window,
-                   ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-                       ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (window) {
+    if (ImGui::Begin("Controles da VM", &window,
+                     ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                         ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::AlignTextToFramePadding();
+      ImVec2 buttonSize = ImVec2(30, 30);
 
-    ImGui::AlignTextToFramePadding();
-    ImVec2 buttonSize = ImVec2(30, 30);
+      ImGui::Text("Controles");
+      ImGui::Separator();
 
-    ImGui::Text("Controls");
-    ImGui::Separator();
+      if (ImGui::Button(ICON_CI_DEBUG_STOP, buttonSize)) {
+        VMEngine::NotifyCommand(STOP);
+      }
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_CI_RUN, buttonSize)) {
+        VMEngine::NotifyCommand(RUN);
+      }
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_CI_DEBUG_PAUSE, buttonSize)) {
+        VMEngine::NotifyCommand(PAUSE);
+      }
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_CI_RUN_ALL, buttonSize)) {
+        VMEngine::NotifyCommand(FINISH);
+      }
+      ImGui::SameLine();
 
-    if (ImGui::Button(ICON_CI_DEBUG_STOP, buttonSize)) {
-      VMEngine::NotifyCommand(STOP);
+      float windowWidth = ImGui::GetWindowSize().x;
+      // Eu não compreendi o propósito desse alinamento
+      // ImGui::SetCursorPosX(ImGui::GetCursorPosX() + windowWidth -
+      //                    5 * buttonSize.x);
+
+      ImGui::AlignTextToFramePadding();
+      if (ImGui::Button(ICON_CI_DEBUG_CONTINUE_SMALL, buttonSize)) {
+        VMEngine::NotifyCommand(STEP);
+      }
+
+      ImGui::Text("Velocidade");
+      ImGui::Separator();
+
+      ImGui::AlignTextToFramePadding();
+      ImGui::PushItemWidth(windowWidth - 20);
+      static float speed = vm.clockSpeed;
+      if (ImGui::SliderFloat("##SpeedSlider", &speed, 0.01f, 5.0f, "%.2f Hz",
+                             ImGuiSliderFlags_Logarithmic)) {
+        vm.clockSpeed.store(speed);
+      }
+      // acorda a VM pra atualizar a velocidade :D
+      ImGui::PopItemWidth();
     }
-    ImGui::SameLine();
-    if (ImGui::Button(ICON_CI_RUN, buttonSize)) {
-      VMEngine::NotifyCommand(RUN);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button(ICON_CI_DEBUG_PAUSE, buttonSize)) {
-      VMEngine::NotifyCommand(PAUSE);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button(ICON_CI_RUN_ALL, buttonSize)) {
-      VMEngine::NotifyCommand(FINISH);
-    }
-    ImGui::SameLine();
-
-    float windowWidth = ImGui::GetWindowSize().x;
-    // Eu não compreendi o propósito desse alinamento
-    // ImGui::SetCursorPosX(ImGui::GetCursorPosX() + windowWidth -
-    //                    5 * buttonSize.x);
-
-    ImGui::AlignTextToFramePadding();
-    if (ImGui::Button(ICON_CI_DEBUG_CONTINUE_SMALL, buttonSize)) {
-      VMEngine::NotifyCommand(STEP);
-    }
-
-    ImGui::Text("Speed");
-    ImGui::Separator();
-
-    ImGui::AlignTextToFramePadding();
-    ImGui::PushItemWidth(windowWidth - 20);
-    static float speed = vm.clockSpeed;
-    if (ImGui::SliderFloat("##SpeedSlider", &speed, 0.0f, 5.0f, "%.2f Hz",
-                           ImGuiSliderFlags_Logarithmic)) {
-      vm.clockSpeed.store(speed);
-    }
-    // acorda a VM pra atualizar a velocidade :D
-    ImGui::PopItemWidth();
+    ImGui::End();
   }
-
-  ImGui::End();
 }
