@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -24,6 +25,21 @@ struct AssemblerSymbolData {
   int16_t address;
   bool defined = false;
 };
+
+struct Instruction {
+  int16_t lineNumber;
+  std::string mnemonic;
+  std::vector<std::string> operands;
+  std::string label;
+  bool isComment = false;
+};
+
+struct ParseResult {
+  AssemblerExitCode exitCode = SUCCESS;
+  Instruction instruction;
+};
+
+ParseResult ParseLine(const std::string &line, int lineNumber);
 
 class Assembler {
  private:
@@ -62,7 +78,9 @@ class Assembler {
 
   AssemblerExitCode FirstPass();
   AssemblerExitCode SecondPass();
+  AssemblerExitCode FirstPass();
 
+ public:
  public:
   Assembler(const std::string &asmFilePath, const std::string &objFilePath,
             const std::string &lstFilePath);
