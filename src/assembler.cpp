@@ -21,6 +21,8 @@ AssemblerExitCode Assembler::Assemble() {
   this->finalExitCode = this->FirstPass();
   if (this->finalExitCode != SUCCESS) return finalExitCode;
   this->finalExitCode = this->SecondPass();
+  WriteObjectCodeFile();
+  WriteListingFile();
   return finalExitCode;
 }
 
@@ -67,7 +69,7 @@ AssemblerExitCode Assembler::SecondPass() {
         int16_t finalOpCode = opcodes[opcode];
 
         size_t opcodeIdx = objectCode.size() - 1;
-        std::string generatedCodeForLst;
+        std::string generatedCodeForLst = "";
         std::string sourceCodeForLst;
 
         sourceCodeForLst += opcode;
@@ -98,8 +100,7 @@ AssemblerExitCode Assembler::SecondPass() {
             operand = operand.substr(1);
             objectCode.push_back(static_cast<int16_t>(std::stoi(operand)));
             generatedCodeForLst += " ";
-
-            generatedCodeForLst += std::to_string(symbolTable[operand].address);
+            generatedCodeForLst += operand;
 
             return;
 
@@ -124,7 +125,6 @@ AssemblerExitCode Assembler::SecondPass() {
         listingLine.sourceCode = sourceCodeForLst;
 
         listingLines.push_back(listingLine);
-
       } else if (opcode == "STACK")
         stackSize = std::stoi(operand1);
       else if (opcode == "CONST")
@@ -137,77 +137,17 @@ AssemblerExitCode Assembler::SecondPass() {
         continue;
     }
   }
-  for (int16_t e : objectCode) {
-    std::cout << e << " ";
-  }
 
   file.close();
   return exitCode;
 }
 // Não parar a compilação com erro. Adicionar a listingerrors a linha que teve
 // erro e o tipo de erro
-// Para o arquivo .lst é necessário atualizar ListingLines com: endereço que o
-// operador será colocado, o código gerado pelo operador e seus operandos
-// separado por ' ', a linha em que a instrução se encontra no .asm e o
-// opcode+operandos escritos em linguagem natural
 // resolver números
 
 //
 // escreve o arquivo .obj com base no vetor this->objectCode
-void Assembler::WriteObjectCodeFile() {
-  std::ofstream objFile(this->objFilePath, std::ios::binary);
-  if (!objFile) {
-    std::cerr << "Erro ao abrir o arquivo de código objeto: "
-              << this->objFilePath << std::endl;
-    return;
-  }
-
-  // STACK_SIZE
-  objFile.put(static_cast<int16_t>(ObjSectionType::STACK_SIZE));
-  objFile.write(reinterpret_cast<const char *>(&this->stackSize),
-                sizeof(int16_t));
-
-  // INTDEF
-  objFile.put(static_cast<int16_t>(ObjSectionType::INTDEF));
-  int16_t defCount = static_cast<int16_t>(this->intDefTable.size());
-  objFile.write(reinterpret_cast<const char *>(&defCount), sizeof(int16_t));
-
-  for (const auto &[label, addr] : this->intDefTable) {
-    int16_t labelLen = static_cast<int16_t>(label.size());
-    objFile.write(reinterpret_cast<const char *>(&labelLen), sizeof(int16_t));
-    objFile.write(label.data(), labelLen);
-    objFile.write(reinterpret_cast<const char *>(&addr), sizeof(int16_t));
-  }
-
-  // INTUSE
-  objFile.put(static_cast<int16_t>(ObjSectionType::INTUSE));
-  int16_t useCount = static_cast<int16_t>(this->intUseTable.size());
-  objFile.write(reinterpret_cast<const char *>(&useCount), sizeof(int16_t));
-
-  for (const auto &[label, addresses] : this->intUseTable) {
-    int16_t labelLen = static_cast<int16_t>(label.size());
-    objFile.write(reinterpret_cast<const char *>(&labelLen), sizeof(int16_t));
-    objFile.write(label.data(), labelLen);
-
-    int16_t addrCount = static_cast<int16_t>(addresses.size());
-    objFile.write(reinterpret_cast<const char *>(&addrCount), sizeof(int16_t));
-    for (int16_t addr : addresses) {
-      objFile.write(reinterpret_cast<const char *>(&addr), sizeof(int16_t));
-    }
-  }
-
-  // CODE
-  objFile.put(static_cast<int16_t>(ObjSectionType::CODE));
-  int16_t codeSize = static_cast<int16_t>(this->objectCode.size());
-  objFile.write(reinterpret_cast<const char *>(&codeSize), sizeof(int16_t));
-  objFile.write(reinterpret_cast<const char *>(this->objectCode.data()),
-                this->objectCode.size() * sizeof(int16_t));
-
-  // END
-  objFile.put(static_cast<int16_t>(ObjSectionType::END));
-
-  objFile.close();
-}
+void Assembler::WriteObjectCodeFile() {}
 
 // escreve o arquivo .lst com this->listingLines e this->listingErrors
 void Assembler::WriteListingFile() {}
