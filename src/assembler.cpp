@@ -8,7 +8,7 @@
 #include <vector>
 
 std::unordered_map<std::string, int16_t> opcodes = {
-    {"ADD", 3},   {"BR", 0},    {"BRNEG", 5},   {"BRPOS", 1}, {"BRZERO", 4},
+    {"ADD", 2},   {"BR", 0},    {"BRNEG", 5},   {"BRPOS", 1}, {"BRZERO", 4},
     {"CALL", 15}, {"COPY", 13}, {"DIVIDE", 10}, {"LOAD", 3},  {"MULT", 14},
     {"PUSH", 17}, {"POP", 18},  {"READ", 12},   {"RET", 16},  {"STOP", 11},
     {"SUB", 6},   {"WRITE", 8}};
@@ -27,6 +27,7 @@ AssemblerExitCode Assembler::Assemble() {
   this->finalExitCode = this->FirstPass();
   if (this->finalExitCode != SUCCESS) return finalExitCode;
   this->finalExitCode = this->SecondPass();
+  if (this->finalExitCode != SUCCESS) return finalExitCode;
   WriteObjectCodeFile();
   WriteListingFile();
   return finalExitCode;
@@ -70,7 +71,8 @@ AssemblerExitCode Assembler::FirstPass() {
     if (!mnemonic.empty() && mnemonic[0] == '#') {
       mnemonic = mnemonic.substr(1);
     }
-    if (!mnemonic.empty() && mnemonic.size() > 2 && mnemonic.substr(mnemonic.size() - 2) == ",I") {
+    if (!mnemonic.empty() && mnemonic.size() > 2 &&
+        mnemonic.substr(mnemonic.size() - 2) == ",I") {
       mnemonic = mnemonic.substr(0, mnemonic.size() - 2);
     }
     std::transform(mnemonic.begin(), mnemonic.end(), mnemonic.begin(),
@@ -78,7 +80,7 @@ AssemblerExitCode Assembler::FirstPass() {
 
     // Tratando intDefTable e intUseTable
     if (mnemonic == "INTUSE") {
-      if (instruction.label.empty() ){
+      if (instruction.label.empty()) {
         std::cerr << "Error: INTUSE directive requires a label at line "
                   << lineCounter << std::endl;
         return SYNTAX_ERROR;
@@ -97,11 +99,13 @@ AssemblerExitCode Assembler::FirstPass() {
       const std::string &symbol = instruction.operands[0];
       auto &defSymData = intDefTable[symbol];
       if (defSymData.defined) {
-        std::cerr << "Error: Symbol redefinition for " << symbol
-                  << " at line " << lineCounter << std::endl;
+        std::cerr << "Error: Symbol redefinition for " << symbol << " at line "
+                  << lineCounter << std::endl;
         return SYMBOL_REDEFINITION;
       }
-      defSymData.defined = true; // Simbolo definido na tabela de definições não significa que foi definido na tabela de símbolos
+      defSymData.defined =
+          true;  // Simbolo definido na tabela de definições não significa que
+                 // foi definido na tabela de símbolos
       defSymData.address = -1;
       defSymData.line = lineCounter;
       continue;
@@ -148,11 +152,11 @@ AssemblerExitCode Assembler::FirstPass() {
         locationCounter = std::stoi(instruction.operands[0]);
       }
 
-    }else if (mnemonic == "END") {
+    } else if (mnemonic == "END") {
       foundEnd = true;
       continue;
 
-    }else if (mnemonic == "CONST") {
+    } else if (mnemonic == "CONST") {
       if (instruction.operands.size() != 1) {
         std::cerr << "Error: " << mnemonic
                   << " directive requires one operand at line " << lineCounter
@@ -161,7 +165,7 @@ AssemblerExitCode Assembler::FirstPass() {
       }
       locationCounter += 1;
 
-    }else if (mnemonic == "SPACE") {
+    } else if (mnemonic == "SPACE") {
       if (instruction.operands.size() != 0) {
         std::cerr << "Error: SPACE directive does not require operands at line "
                   << lineCounter << std::endl;
@@ -169,7 +173,7 @@ AssemblerExitCode Assembler::FirstPass() {
       }
       locationCounter += 1;
 
-    }else if (mnemonic == "STACK") {
+    } else if (mnemonic == "STACK") {
       if (instruction.operands.size() != 1) {
         std::cerr << "Error: STACK directive requires one operand at line "
                   << lineCounter << std::endl;
@@ -177,7 +181,7 @@ AssemblerExitCode Assembler::FirstPass() {
       }
       locationCounter += std::stoi(instruction.operands[0]);
 
-    }else if (opcodes.contains(mnemonic)) {
+    } else if (opcodes.contains(mnemonic)) {
       if (mnemonic == "COPY") {
         if (instruction.operands.size() != 2) {
           std::cerr << "Error: COPY instruction requires two operands at line "
@@ -199,14 +203,16 @@ AssemblerExitCode Assembler::FirstPass() {
     for (auto &operand : instruction.operands) {
       if (!operand.empty() && operand[0] == '@') {
         const std::string digits = operand.substr(1);
-        if (digits.empty() || !std::all_of(digits.begin(), digits.end(), ::isdigit)) {
-          std::cerr << "Error: Literal operand must be followed by a number at line "
-                    << lineCounter << std::endl;
+        if (digits.empty() ||
+            !std::all_of(digits.begin(), digits.end(), ::isdigit)) {
+          std::cerr
+              << "Error: Literal operand must be followed by a number at line "
+              << lineCounter << std::endl;
           return SYNTAX_ERROR;
         }
-        auto &literalData = literalTable[digits];
+        auto &literalData = literalTable[operand];
         if (literalData.defined) {
-          std::cerr << "Error: Literal " << digits << " redefined at line "
+          std::cerr << "Error: Literal " << operand << " redefined at line "
                     << lineCounter << std::endl;
         }
       }
@@ -216,7 +222,7 @@ AssemblerExitCode Assembler::FirstPass() {
   // Fecha literal table
   int16_t poolBase = locationCounter;
   for (auto &[literal, data] : literalTable) {
-    if (!data.defined){
+    if (!data.defined) {
       data.address = poolBase++;
       data.defined = true;
     }
@@ -233,8 +239,8 @@ AssemblerExitCode Assembler::FirstPass() {
   }
 
   if (!foundEnd) {
-  std::cerr << "Error: No END directive found in the program." << std::endl;
-  return NO_END;
+    std::cerr << "Error: No END directive found in the program." << std::endl;
+    return NO_END;
   }
 
   return SUCCESS;
@@ -341,6 +347,10 @@ AssemblerExitCode Assembler::SecondPass() {
         return first;
       }();
 
+      label = "";
+      opcode = "";
+      operand1 = "";
+      operand2 = "";
       if (!assemblerInstructions.contains(firstToken)) {
         lineStream >> label >> opcode >> operand1 >> operand2;
       } else {
@@ -360,6 +370,8 @@ AssemblerExitCode Assembler::SecondPass() {
         auto solveOperand = [&](std::string &operand, int whichOne) {
           sourceCodeForLst += " ";
           sourceCodeForLst += operand;
+
+          // INDIRETO
           if (operand.back() == 'I') {
             finalOpCode += whichOne;
             objectCode[opcodeIdx] = finalOpCode;
@@ -373,6 +385,7 @@ AssemblerExitCode Assembler::SecondPass() {
             generatedCodeForLst += std::to_string(symbolTable[operand].address);
             return;
 
+            // IMEDIATO
           } else if (operand[0] == '#') {
             if (opcode == "COPY" && whichOne == 32) {
               exitCode = INVALID_CHARACTER;
@@ -389,21 +402,36 @@ AssemblerExitCode Assembler::SecondPass() {
             generatedCodeForLst += operand;
             return;
 
+            // DIRETO
           } else {
-            if (!symbolTable.contains(operand)) {
+            if (!symbolTable.contains(operand) &&
+                !literalTable.contains(operand) &&
+                !intUseTable.contains(operand)) {
               exitCode = SYMBOL_UNDEFINED;
               return;
             }
-            if (operand[0] == '@') {
+            int16_t address;
+            std::string addressToLst;
+            if (operand[0] == '@') {  // literal
+              // operand = operand.substr(1);
+              address = literalTable[operand].address;
+              addressToLst = std::to_string(literalTable[operand].address);
+            } else if (symbolTable.contains(operand)) {  // símbolo local
+              address = symbolTable[operand].address;
+              addressToLst = std::to_string(symbolTable[operand].address);
+            } else {  // símbolo definido em outro módulo
+              address = 0;
+              addressToLst = "0";
+              intUseTable[operand].push_back(objectCode.size());
             }
-            objectCode.push_back(symbolTable[operand].address);
+            objectCode.push_back(address);
             generatedCodeForLst += " ";
-            generatedCodeForLst += std::to_string(symbolTable[operand].address);
+            generatedCodeForLst += addressToLst;
           }
         };
         if (!operand1.empty()) solveOperand(operand1, 32);
         if (!operand2.empty()) solveOperand(operand2, 64);
-
+        if (exitCode != SUCCESS) return exitCode;
         ListingLine listingLine;
         listingLine.address = opcodeIdx + 1;
         listingLine.generatedCode =
@@ -416,23 +444,28 @@ AssemblerExitCode Assembler::SecondPass() {
         stackSize = std::stoi(operand1);
       else if (opcode == "CONST")
         objectCode.push_back(static_cast<int16_t>(std::stoi(operand1)));
-      else if (opcode == "SPACE")
+      else if (opcode == "SPACE") {
         // for (int i = 0; i < std::stoi(operand1); ++i)
         // objectCode.push_back(0);
+        if (operand1 == "") operand1 = "1";
         objectCode.insert(objectCode.end(), std::stoi(operand1), 0);
-      else
+      } else
         continue;
     }
   }
   file.close();
+  // resolvendo literais
+  for (auto &[label, _] : literalTable) {
+    int16_t value = std::stoi(label.substr(1));
+    objectCode.push_back(value);
+  }
 
+  for (auto ovo : objectCode) {
+    std::cout << ovo << " ";
+  }
   return exitCode;
 }
-// Não parar a compilação com erro. Adicionar a listingerrors a linha que teve
-// erro e o tipo de erro
-// resolver números
 
-//
 // escreve o arquivo .obj com base no vetor this->objectCode
 void Assembler::WriteObjectCodeFile() {
   std::ofstream objFile(this->objFilePath, std::ios::binary);

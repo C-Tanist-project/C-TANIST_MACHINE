@@ -14,33 +14,36 @@ int main(int argc, char *argv[]) {
     std::string test = "tests/testFirstPass.asm";
 
     printf("Assembling %s\n", test.c_str());
-    std::string objFilePath = "../tests/testFirstPass.obj";
-    std::string lstFilePath = "../tests/testFirstPass.lst";
+    std::string objFilePath = "tests/testFirstPass.obj";
+    std::string lstFilePath = "tests/testFirstPass.lst";
 
-    Assembler assembler(test, objFilePath, lstFilePath);
-    AssemblerExitCode exitCode = assembler.FirstPass();
+    Assembler *assembler = new Assembler(test, objFilePath, lstFilePath);
+    AssemblerExitCode exitCode = assembler->Assemble();
 
     std::cout << "Exit code: " << exitCode << std::endl;
 
-    for (auto &[symbol, data] : assembler.symbolTable) {
+    for (auto &[symbol, data] : assembler->symbolTable) {
       std::cout << "Symbol: " << symbol << ", Address: " << data.address
                 << ", Defined: " << (data.defined ? "Yes" : "No") << std::endl;
     }
 
-    for (auto &[literal, data] : assembler.literalTable) {
+    for (auto &[literal, data] : assembler->literalTable) {
       std::cout << "Literal: " << literal << ", Address: " << data.address
                 << ", Defined: " << (data.defined ? "Yes" : "No") << std::endl;
     }
 
-    for (const auto &[symbol, data] : assembler.intDefTable) {
+    for (const auto &[symbol, data] : assembler->intDefTable) {
       std::cout << "IntDef Symbol: " << symbol << ", Address: " << data.address
                 << ", Defined: " << (data.defined ? "Yes" : "No") << std::endl;
     }
 
-    for (const auto &[symbol, data] : assembler.intUseTable) {
-      std::cout << "IntUse Symbol: " << symbol << std::endl;
+    for (const auto &[symbol, data] : assembler->intUseTable) {
+      std::cout << "IntUse Symbol: " << symbol << " -> [ ";
+      for (const auto &elem : data) {
+        std::cout << elem << " ";
+      }
+      std::cout << "]" << std::endl;
     }
-
     return 0;
   }
 

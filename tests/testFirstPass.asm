@@ -2,14 +2,21 @@
  intdef Hellida
 Ines intuse
 Jorge intuse
-Bento COPy Catarina Dorival
- Br Estela
- Load Felipe
- READ Gustavo
- add @6
- divide @3
-Felipe Const 3
-Estela Const 0
-Amilton Space
-Hellida Space
+Bento COPY Catarina Dorival
+ BR Estela
+ LOAD Felipe
+ LOAD Gustavo
+ ADD @6
+ DIVIDE @3
+ LOAD @3
+ SUB Ines
+ CALL Jorge
+ LOAD Amilton
+Felipe CONST 3
+Estela CONST 0
+Gustavo CONST 5
+Catarina CONST 2
+Dorival CONST 4
+Amilton SPACE
+Hellida SPACE
  End
