@@ -302,16 +302,20 @@ AssemblerExitCode Assembler::SecondPass() {
             finalOpCode += 128;
             objectCode[opcodeIdx] = finalOpCode;
             operand = operand.substr(1);
+            if (operand[0] == 'H') {
+              operand = operand.substr(2, operand.size() - 3);
+            }
             objectCode.push_back(static_cast<int16_t>(std::stoi(operand)));
             generatedCodeForLst += " ";
             generatedCodeForLst += operand;
-
             return;
 
           } else {
             if (!symbolTable.contains(operand)) {
               exitCode = SYMBOL_UNDEFINED;
               return;
+            }
+            if (operand[0] == '@') {
             }
             objectCode.push_back(symbolTable[operand].address);
             generatedCodeForLst += " ";
@@ -341,8 +345,8 @@ AssemblerExitCode Assembler::SecondPass() {
         continue;
     }
   }
-
   file.close();
+
   return exitCode;
 }
 // Não parar a compilação com erro. Adicionar a listingerrors a linha que teve

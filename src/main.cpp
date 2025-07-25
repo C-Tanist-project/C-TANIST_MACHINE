@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  // Operations::InitializeMap();
+  Operations::InitializeMap();
   VMEngine engine;
   VMState vm;
 
@@ -33,7 +33,12 @@ int main(int argc, char *argv[]) {
     vm.memory[instructionsMemoryAddress] = buffer;
     ++instructionsMemoryAddress;
   }
+  std::string pathToAsm = "/home/bodinho/5/C-TANIST_MACHINE/tests/test.asm";
+  std::string pathToObj = "/home/bodinho/5/C-TANIST_MACHINE/test.obj";
+  std::string pathToLst = "/home/bodinho/5/C-TANIST_MACHINE/test.lst";
+  Assembler *assembler = new Assembler(pathToAsm, pathToObj, pathToLst);
 
+  assembler->Assemble();
   std::thread engineThread(&VMEngine::Run, &engine, std::ref(vm));
 
   GLFWwindow *window = MainWindowSetup(1280, 720, "Pentacle VM");
