@@ -78,24 +78,23 @@ class Assembler {
   std::vector<ListingLine> listingLines;
   // inserir erros de montagem aqui (não sei se precisa ser um vetor)
   std::vector<ListingError> listingErrors;
-  
+  std::unordered_map<std::string, AssemblerIntDefData>
+      intDefTable;        // tabela de simbolos definidos no modulo
   int16_t stackSize = 0;  // tamanho da pilha
-  
-  AssemblerExitCode SecondPass();
-  
-  public:
-  std::unordered_map<std::string, AssemblerIntDefData> // publico para testes
-  intDefTable;  // tabela de simbolos definidos no modulo
-  std::unordered_map<std::string, std::vector<int16_t>> // publico para testes
-  intUseTable;        // tabela de simbolos usados no modulo
-  AssemblerExitCode FirstPass(); //publico para testes
+  std::unordered_map<std::string, std::vector<int16_t>>
+      intUseTable;  // tabela de simbolos usados no modulo
+
   // tabela de símbolos
-  std::unordered_map<std::string, AssemblerSymbolData> symbolTable; // publico para testes
+  std::unordered_map<std::string, AssemblerSymbolData> symbolTable;
   // tabela de literais
-  std::unordered_map<std::string, AssemblerLiteralData> literalTable; // publico para testes
+  std::unordered_map<std::string, AssemblerLiteralData> literalTable;
+  AssemblerExitCode FirstPass();
+  AssemblerExitCode SecondPass();
+  void WriteObjectCodeFile();
+  void WriteListingFile();
+
+ public:
   Assembler(const std::string &asmFilePath, const std::string &objFilePath,
             const std::string &lstFilePath);
   AssemblerExitCode Assemble();
-  void WriteObjectCodeFile();
-  void WriteListingFile();
 };

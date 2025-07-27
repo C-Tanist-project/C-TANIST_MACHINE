@@ -5,92 +5,59 @@
 #include <thread>
 
 #include "assembler.hpp"
-// #include "ui.hpp"
-// #include "vm.hpp"
+#include "ui.hpp"
+#include "vm.hpp"
 
 int main(int argc, char *argv[]) {
-  if (argc > 1 && strcmp(argv[1], "assemble") == 0) {
-    std::cout << "CWD = " << std::filesystem::current_path() << '\n';
-    std::string test = "tests/testFirstPass.asm";
+  std::string test = "tests/test.asm";
+  std::string objFilePath = "tests/test.obj";
+  std::string lstFilePath = "tests/test.lst";
+  Operations::InitializeMap();
+  VMEngine engine;
+  VMState vm;
 
-    printf("Assembling %s\n", test.c_str());
-    std::string objFilePath = "tests/testFirstPass.obj";
-    std::string lstFilePath = "tests/testFirstPass.lst";
+  VMStateSetup(vm);
 
-    Assembler *assembler = new Assembler(test, objFilePath, lstFilePath);
-    AssemblerExitCode exitCode = assembler->Assemble();
+  Assembler *assembler = new Assembler(test, objFilePath, lstFilePath);
+  AssemblerExitCode exitCode = assembler->Assemble();
 
-    std::cout << "Exit code: " << exitCode << std::endl;
+  std::ifstream file(argv[1], std::ios::binary);
 
-    for (auto &[symbol, data] : assembler->symbolTable) {
-      std::cout << "Symbol: " << symbol << ", Address: " << data.address
-                << ", Defined: " << (data.defined ? "Yes" : "No") << std::endl;
-    }
-
-    for (auto &[literal, data] : assembler->literalTable) {
-      std::cout << "Literal: " << literal << ", Address: " << data.address
-                << ", Defined: " << (data.defined ? "Yes" : "No") << std::endl;
-    }
-
-    for (const auto &[symbol, data] : assembler->intDefTable) {
-      std::cout << "IntDef Symbol: " << symbol << ", Address: " << data.address
-                << ", Defined: " << (data.defined ? "Yes" : "No") << std::endl;
-    }
-
-    for (const auto &[symbol, data] : assembler->intUseTable) {
-      std::cout << "IntUse Symbol: " << symbol << " -> [ ";
-      for (const auto &elem : data) {
-        std::cout << elem << " ";
-      }
-      std::cout << "]" << std::endl;
-    }
-    return 0;
+  if (!file) {
+    std::cerr << "Error opening file!\n";
+    return 1;
   }
 
-  // Operations::InitializeMap();
-  // VMEngine engine;
-  // VMState vm;
+  int16_t instructionsMemoryAddress = 32;
 
-  // VMStateSetup(vm);
+  int16_t buffer;
 
-  // std::ifstream file(argv[1], std::ios::binary);
+  while (file.read(reinterpret_cast<char *>(&buffer), sizeof(buffer))) {
+    vm.memory[instructionsMemoryAddress] = buffer;
+    ++instructionsMemoryAddress;
+  }
 
-  // if (!file) {
-  //   std::cerr << "Error opening file!\n";
-  //   return 1;
-  // }
+  std::thread engineThread(&VMEngine::Run, &engine, std::ref(vm));
 
-  // int16_t instructionsMemoryAddress = 32;
+  GLFWwindow *window = MainWindowSetup(1280, 720, "Pentacle VM");
 
-  // int16_t buffer;
+  IMGUIsetup(window);
 
-  // while (file.read(reinterpret_cast<char *>(&buffer), sizeof(buffer))) {
-  //   vm.memory[instructionsMemoryAddress] = buffer;
-  //   ++instructionsMemoryAddress;
-  // }
+  for (int i = 31; i < 50; ++i) {
+    std::cout << vm.memory[i] << " ";
+  }
 
-  // std::thread engineThread(&VMEngine::Run, &engine, std::ref(vm));
+  std::cout << std::endl;
 
-  // GLFWwindow *window = MainWindowSetup(1280, 720, "Pentacle VM");
+  SetupCtanistStyle();
 
-  // IMGUIsetup(window);
+  while (!glfwWindowShouldClose(window)) {
+    RenderMainWindow(window, vm);
+  }
 
-  // for (int i = 31; i < 50; ++i) {
-  //   std::cout << vm.memory[i] << " ";
-  // }
+  VMEngine::NotifyCommand(CLOSE);
+  engineThread.join();
 
-  // std::cout << std::endl;
-
-  // SetupCtanistStyle();
-
-  // while (!glfwWindowShouldClose(window)) {
-  //   RenderMainWindow(window, vm);
-  // }
-
-  // VMEngine::NotifyCommand(CLOSE);
-  // engineThread.join();
-
-  // WindowCleanup(window);
-
-  // return 0;
+  WindowCleanup(window);
+  return 0;
 }

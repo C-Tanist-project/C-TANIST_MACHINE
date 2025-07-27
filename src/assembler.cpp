@@ -413,7 +413,6 @@ AssemblerExitCode Assembler::SecondPass() {
             int16_t address;
             std::string addressToLst;
             if (operand[0] == '@') {  // literal
-              // operand = operand.substr(1);
               address = literalTable[operand].address;
               addressToLst = std::to_string(literalTable[operand].address);
             } else if (symbolTable.contains(operand)) {  // símbolo local
@@ -445,8 +444,6 @@ AssemblerExitCode Assembler::SecondPass() {
       else if (opcode == "CONST")
         objectCode.push_back(static_cast<int16_t>(std::stoi(operand1)));
       else if (opcode == "SPACE") {
-        // for (int i = 0; i < std::stoi(operand1); ++i)
-        // objectCode.push_back(0);
         if (operand1 == "") operand1 = "1";
         objectCode.insert(objectCode.end(), std::stoi(operand1), 0);
       } else
@@ -458,10 +455,6 @@ AssemblerExitCode Assembler::SecondPass() {
   for (auto &[label, _] : literalTable) {
     int16_t value = std::stoi(label.substr(1));
     objectCode.push_back(value);
-  }
-
-  for (auto ovo : objectCode) {
-    std::cout << ovo << " ";
   }
   return exitCode;
 }
