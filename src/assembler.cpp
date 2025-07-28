@@ -106,7 +106,7 @@ AssemblerExitCode Assembler::FirstPass() {
       defSymData.defined =
           true;  // Simbolo definido na tabela de definições não significa que
                  // foi definido na tabela de símbolos
-      defSymData.address = -1;
+      defSymData.address = UNRESOLVED_ADDRESS;
       defSymData.line = lineCounter;
       continue;
     }
