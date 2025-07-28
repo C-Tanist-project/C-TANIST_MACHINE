@@ -4,15 +4,18 @@
 #include <thread>
 
 #include "assembler.hpp"
+
+#include "preprocessor.hpp"
 #include "ui.hpp"
 #include "vm.hpp"
 
 int main(int argc, char *argv[]) {
-  if (argc > 1 && strcmp(argv[1], "assemble") == 0) {
-    return 0;
+  if (argc > 1 && strcmp(argv[1], "preprocess") == 0) {
+    MacroProcessor macross(argv[2]);
+    macross.Pass();
   }
 
-  // Operations::InitializeMap();
+  Operations::InitializeMap();
   VMEngine engine;
   VMState vm;
 
