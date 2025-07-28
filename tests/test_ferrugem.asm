@@ -18,7 +18,7 @@
         MEND
         MEND
 *
-        MACRO   &LAB
+        MACRO
 &LAB    DISCR   &A,&B,&C,&D
 &LAB    MULTSC  &A,&C,TEMP1
         MULTSC  TEMP1,@4,TEMP1

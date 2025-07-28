@@ -1,10 +1,11 @@
+#include <algorithm>
+#include <deque>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <regex>
 #include <sstream>
-#include <stack>
 #include <string>
-#include <vector>
 
 #include "types.hpp"
 
@@ -12,19 +13,17 @@ typedef struct par {
   std::string parameter;
   int level;
   int position;
-} macroParameter_t;
+} MacroParameter_t;
 
 typedef struct structMacro {
   std::string macroName;
   std::string macroSkeleton;
-  int arguments = 0;
-  int expansions = 0;
 } Macro_t;
 
 class MacroProcessor {
   int levelCounter;
   bool isExpanding;
-  std::stack<macroParameter_t> formalParameters;
+  std::deque<MacroParameter_t> formmalParameters;
   std::vector<Macro_t> definedMacros;
   std::string asmFilePath;
 
