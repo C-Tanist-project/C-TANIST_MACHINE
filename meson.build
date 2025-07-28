@@ -1,4 +1,5 @@
-project('pentacle', 'cpp', 'c')
+project('pentacle', 'cpp', 'c',
+  default_options : ['cpp_std=c++23'])
 
 srcs = ['src/main.cpp', 'src/ui.cpp', 'src/vm.cpp', 'src/windows/memory_editor.cpp', 'src/windows/controls.cpp', 'src/windows/console.cpp', 'src/external/ImGuiFileDialog.cpp', 'src/windows/vmstate.cpp', 'src/assembler.cpp']
 
