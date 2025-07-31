@@ -1,4 +1,5 @@
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <thread>
@@ -8,15 +9,17 @@
 #include "vm.hpp"
 
 int main(int argc, char *argv[]) {
-  if (argc > 1 && strcmp(argv[1], "assemble") == 0) {
-    return 0;
-  }
-
-  // Operations::InitializeMap();
+  std::string test = "tests/test.asm";
+  std::string objFilePath = "tests/test.obj";
+  std::string lstFilePath = "tests/test.lst";
+  Operations::InitializeMap();
   VMEngine engine;
   VMState vm;
 
   VMStateSetup(vm);
+
+  Assembler *assembler = new Assembler(test, objFilePath, lstFilePath);
+  AssemblerExitCode exitCode = assembler->Assemble();
 
   std::ifstream file(argv[1], std::ios::binary);
 
@@ -56,6 +59,5 @@ int main(int argc, char *argv[]) {
   engineThread.join();
 
   WindowCleanup(window);
-
   return 0;
 }

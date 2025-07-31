@@ -26,6 +26,17 @@ struct AssemblerSymbolData {
   bool defined = false;
 };
 
+struct AssemblerIntDefData {
+  int16_t address;
+  bool defined = false;
+  int16_t line;
+};
+
+struct AssemblerLiteralData {
+  int16_t address;
+  bool defined = false;
+};
+
 struct Instruction {
   int16_t lineNumber;
   std::string mnemonic;
@@ -61,28 +72,29 @@ class Assembler {
   std::string objFilePath;
   std::string lstFilePath;
 
-  // tabela de símbolos
-  std::unordered_map<std::string, AssemblerSymbolData> symbolTable;
   // código de máquina que vai entrar na memória
   std::vector<int16_t> objectCode;
   // código gerado | código fonte, ver formato na especificação
   std::vector<ListingLine> listingLines;
   // inserir erros de montagem aqui (não sei se precisa ser um vetor)
   std::vector<ListingError> listingErrors;
-
-  std::unordered_map<std::string, int16_t>
-      intDefTable;  // tabela de simbolos definidos no modulo
-  std::unordered_map<std::string, std::vector<int16_t>>
-      intUseTable;        // tabela de simbolos usados no modulo
+  std::unordered_map<std::string, AssemblerIntDefData>
+      intDefTable;        // tabela de simbolos definidos no modulo
   int16_t stackSize = 0;  // tamanho da pilha
+  std::unordered_map<std::string, std::vector<int16_t>>
+      intUseTable;  // tabela de simbolos usados no modulo
 
+  // tabela de símbolos
+  std::unordered_map<std::string, AssemblerSymbolData> symbolTable;
+  // tabela de literais
+  std::unordered_map<std::string, AssemblerLiteralData> literalTable;
   AssemblerExitCode FirstPass();
   AssemblerExitCode SecondPass();
+  void WriteObjectCodeFile();
+  void WriteListingFile();
 
  public:
   Assembler(const std::string &asmFilePath, const std::string &objFilePath,
             const std::string &lstFilePath);
   AssemblerExitCode Assemble();
-  void WriteObjectCodeFile();
-  void WriteListingFile();
 };
