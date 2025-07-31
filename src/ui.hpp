@@ -15,6 +15,7 @@
 
 #include "external/ImGuiFileDialog.h"
 #include "external/ImGuiFileDialogConfig.h"
+#include "external/TextEditor.h"
 #include "external/codicon_cpp_header.h"
 #include "external/imgui_memory_editor.h"
 #include "imgui.h"
@@ -36,6 +37,7 @@ void RenderMainWindow(GLFWwindow *window, VMState &vm);
 void RenderControlsWindow(bool &window, VMState &vm);
 void RenderVMState(VMState &vm, bool &window);
 void RenderConsoleWindow(VMState &vm, bool &window);
+void RenderTextEditor(bool &window);
 void WindowCleanup(GLFWwindow *window);
 void SkipToEnd(VMState &vm);
 void SetupCtanistStyle();
