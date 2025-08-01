@@ -26,9 +26,10 @@ class Linker {
   void FirstPass(const std::vector<std::string>& objFilePaths);
   void SecondPass();
   void GenerateOutput(const std::string& outputName);
-  void ReadObjectCodeFile(const std::string& filePath);
 
  public:
   Linker();
+  void ReadObjectCodeFile(const std::string& filePath);
+  void printModules();
   void Link(const std::vector<std::string>& objFilePaths);
 };
