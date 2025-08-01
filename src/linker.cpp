@@ -121,3 +121,33 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
   modules.push_back(std::move(module));
   objFile.close();
 }
+
+void Linker::printModules() {
+  for (const auto &mod : modules) {
+    std::cout << "Module Name: " << mod.name << "\n";
+
+    std::cout << "Code: ";
+    for (const auto &val : mod.code) {
+      std::cout << val << " ";
+    }
+    std::cout << "\n";
+
+    std::cout << "INTDEF Table:\n";
+    for (const auto &[symbol, address] : mod.intDefTable) {
+      std::cout << "  " << symbol << " => " << address << "\n";
+    }
+
+    std::cout << "INTUSE Table:\n";
+    for (const auto &[symbol, positions] : mod.intUseTable) {
+      std::cout << "  " << symbol << " => [ ";
+      for (int pos : positions) {
+        std::cout << pos << " ";
+      }
+      std::cout << "]\n";
+    }
+
+    std::cout << "Stack Size: " << mod.stackSize << "\n";
+    std::cout << "Start Address: " << mod.startAddress << "\n";
+    std::cout << "Load Address: " << mod.loadAddress << "\n";
+  }
+}

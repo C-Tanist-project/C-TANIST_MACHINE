@@ -469,12 +469,16 @@ void Assembler::WriteObjectCodeFile() {
   }
 
   // STACK_SIZE
-  objFile.put(static_cast<int16_t>(ObjSectionType::STACK_SIZE));
+  int16_t _stackSizeSection = static_cast<int16_t>(ObjSectionType::STACK_SIZE);
+  objFile.write(reinterpret_cast<const char *>(&_stackSizeSection),
+                sizeof(int16_t));
   objFile.write(reinterpret_cast<const char *>(&this->stackSize),
                 sizeof(int16_t));
 
   // INTDEF
-  objFile.put(static_cast<int16_t>(ObjSectionType::INTDEF));
+  int16_t intDefSection = static_cast<int16_t>(ObjSectionType::INTDEF);
+  objFile.write(reinterpret_cast<const char *>(&intDefSection),
+                sizeof(int16_t));
   int16_t defCount = static_cast<int16_t>(this->intDefTable.size());
   objFile.write(reinterpret_cast<const char *>(&defCount), sizeof(int16_t));
 
@@ -486,7 +490,9 @@ void Assembler::WriteObjectCodeFile() {
   }
 
   // INTUSE
-  objFile.put(static_cast<int16_t>(ObjSectionType::INTUSE));
+  int16_t intUseSection = static_cast<int16_t>(ObjSectionType::INTUSE);
+  objFile.write(reinterpret_cast<const char *>(&intUseSection),
+                sizeof(int16_t));
   int16_t useCount = static_cast<int16_t>(this->intUseTable.size());
   objFile.write(reinterpret_cast<const char *>(&useCount), sizeof(int16_t));
 
@@ -503,15 +509,16 @@ void Assembler::WriteObjectCodeFile() {
   }
 
   // CODE
-  objFile.put(static_cast<int16_t>(ObjSectionType::CODE));
+  int16_t codeSection = static_cast<int16_t>(ObjSectionType::CODE);
+  objFile.write(reinterpret_cast<const char *>(&codeSection), sizeof(int16_t));
   int16_t codeSize = static_cast<int16_t>(this->objectCode.size());
   objFile.write(reinterpret_cast<const char *>(&codeSize), sizeof(int16_t));
   objFile.write(reinterpret_cast<const char *>(this->objectCode.data()),
                 this->objectCode.size() * sizeof(int16_t));
 
   // END
-  objFile.put(static_cast<int16_t>(ObjSectionType::END));
-
+  int16_t endSection = static_cast<int16_t>(ObjSectionType::END);
+  objFile.write(reinterpret_cast<const char *>(&endSection), sizeof(int16_t));
   objFile.close();
 }
 

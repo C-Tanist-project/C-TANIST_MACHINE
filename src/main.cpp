@@ -5,6 +5,7 @@
 #include <thread>
 
 #include "assembler.hpp"
+#include "linker.hpp"
 #include "ui.hpp"
 #include "vm.hpp"
 
@@ -20,6 +21,10 @@ int main(int argc, char *argv[]) {
 
   Assembler *assembler = new Assembler(test, objFilePath, lstFilePath);
   AssemblerExitCode exitCode = assembler->Assemble();
+
+  Linker *linker = new Linker;
+  linker->ReadObjectCodeFile(objFilePath);
+  linker->printModules();
 
   std::ifstream file(argv[1], std::ios::binary);
 
