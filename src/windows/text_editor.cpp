@@ -1050,6 +1050,9 @@ void TextEditor::Render() {
 }
 
 void RenderTextEditor(bool& window) {
+  static std::filesystem::path currentPath;
+  static bool openDialog = false;
+  static bool openPopup = false;
   static TextEditor editor;
 
   if (!window) return;
@@ -1063,8 +1066,76 @@ void RenderTextEditor(bool& window) {
     return;
   }
 
-  ImVec2 editorSize = ImGui::GetContentRegionAvail();
+  ImVec2 totalAvailable = ImGui::GetContentRegionAvail();
+  ImVec2 editorSize = ImVec2(totalAvailable.x, totalAvailable.y - 50.0f);
   editor.Render("TextEditor", editorSize, true);
+
+  ImGui::Separator();
+  ImGui::Spacing();
+  ImGui::BeginChild("##ButtonsRow", ImVec2(0, 40), false);
+
+  ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 140);
+
+  if (ImGui::Button("Carregar", ImVec2(65, 30))) {
+    openDialog = true;
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Salvar", ImVec2(65, 30))) {
+    std::ofstream file(currentPath);
+    if (file.is_open()) {
+      file << editor.GetText();
+      file.close();
+    }
+  }
+
+  ImGui::EndChild();
+
+  if (openDialog) {
+    IGFD::FileDialogConfig config;
+    config.path = ".";
+    ImGuiFileDialog::Instance()->OpenDialog(
+        "TxtEditorDialog", "Selecionar arquivo (.txt, .asm)",
+        "Assembly or Text{.txt,.asm}", config);
+    ImVec2 initialWindowSize = ImVec2(700, 500);
+    ImGui::SetNextWindowSize(initialWindowSize, ImGuiCond_FirstUseEver);
+    openDialog = false;
+  }
+
+  if (ImGuiFileDialog::Instance()->Display("TxtEditorDialog")) {
+    if (ImGuiFileDialog::Instance()->IsOk()) {
+      std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+#ifdef _WIN32
+      currentPath.assign(IGFD::Utils::UTF8Decode(filePathName));
+#else
+      currentPath.assign(filePathName);
+#endif
+
+      std::ifstream file(currentPath);
+      if (file.is_open()) {
+        std::stringstream ss;
+        ss << file.rdbuf();
+        editor.SetText(ss.str());
+        file.close();
+      }
+
+      auto def = editor.GetLanguageDefinition();
+
+      const char* extra_keywords[] = {
+          // Instruções de máquina
+          "ADD", "BR", "BRNEG", "BRPOS", "BRZERO", "CALL", "COPY", "DIVIDE",
+          "LOAD", "MULT", "PUSH", "POP", "READ", "RET", "STOP", "SUB", "WRITE",
+          // Pseudo-instruções
+          "START", "END", "INTDEF", "INTUSE", "CONST", "SPACE", "STACK"};
+
+      for (auto& kw : extra_keywords) def.mKeywords.insert(kw);
+
+      editor.SetLanguageDefinition(def);
+
+      ImGuiFileDialog::Instance()->Close();
+    } else {
+      ImGuiFileDialog::Instance()->Close();
+    }
+  }
 
   ImGui::End();
 }
@@ -1829,8 +1900,8 @@ void TextEditor::Redo(int aSteps) {
 const TextEditor::Palette& TextEditor::GetCtanistPalette() {
   const static Palette p = {{
       0xffd9d9d9,  // Default
-      0xffd69c56,  // Keyword
-      0xff0000dc,  // Number
+      0xff0000ff,  // Keyword #ff0000ff
+      0x8f0000ff,  // Number #8f0000ff
       0xffffd9d9,  // String
       0xff70a0e0,  // Char literal
       0xffffffff,  // Punctuation
@@ -1845,7 +1916,7 @@ const TextEditor::Palette& TextEditor::GetCtanistPalette() {
       0x80a06020,  // Selection
       0x800020ff,  // ErrorMarker
       0x40f08000,  // Breakpoint
-      0xff0000be,  // Line number
+      0xbe000080,  // Line number #be000080
       0x40000000,  // Current line fill
       0x40808080,  // Current line fill (inactive)
       0x40a0a0a0,  // Current line edge
