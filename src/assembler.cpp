@@ -1,11 +1,7 @@
 #include "assembler.hpp"
 
-#include <fstream>
-#include <iostream>
 #include <regex>
 #include <string>
-#include <unordered_map>
-#include <vector>
 
 std::unordered_map<std::string, int16_t> opcodes = {
     {"ADD", 2},   {"BR", 0},    {"BRNEG", 5},   {"BRPOS", 1}, {"BRZERO", 4},
@@ -13,17 +9,16 @@ std::unordered_map<std::string, int16_t> opcodes = {
     {"PUSH", 17}, {"POP", 18},  {"READ", 12},   {"RET", 16},  {"STOP", 11},
     {"SUB", 6},   {"WRITE", 8}};
 
-Assembler::Assembler(const std::string &asmFilePath,
-                     const std::string &objFilePath,
-                     const std::string &lstFilePath) {
+Assembler::Assembler() {}
+
+AssemblerExitCode Assembler::Assemble(const std::string &asmFilePath,
+                                      const std::string &objFilePath,
+                                      const std::string &lstFilePath) {
   this->asmFilePath = asmFilePath;
   this->objFilePath = objFilePath;
   this->lstFilePath = lstFilePath;
-  this->locationCounter = 0;
-  this->lineCounter = 0;
-}
 
-AssemblerExitCode Assembler::Assemble() {
+  ResetAssembler();
   this->finalExitCode = this->FirstPass();
   if (this->finalExitCode != SUCCESS) return finalExitCode;
   this->finalExitCode = this->SecondPass();
@@ -549,4 +544,24 @@ void Assembler::WriteListingFile() {
   }
 
   lstFile.close();
+}
+
+void Assembler::ResetAssembler() {
+  locationCounter = 0;
+  lineCounter = 0;
+  objectCode.clear();
+  listingLines.clear();
+  listingErrors.clear();
+  intDefTable.clear();
+  intUseTable.clear();
+  stackSize = 0;
+  symbolTable.clear();
+  literalTable.clear();
+}
+
+void notifyAssembling(std::vector<std::string> paths) {
+  for (const auto path : paths) {
+    size_t lastSlash = path.rfind('/');
+    std::string asmFilePath = path.substr(lastSlash + 1);
+  }
 }

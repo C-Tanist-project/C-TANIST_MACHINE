@@ -92,9 +92,12 @@ class Assembler {
   AssemblerExitCode SecondPass();
   void WriteObjectCodeFile();
   void WriteListingFile();
+  void ResetAssembler();
+  void notifyAssembling(std::vector<std::string> path);
 
  public:
-  Assembler(const std::string &asmFilePath, const std::string &objFilePath,
-            const std::string &lstFilePath);
-  AssemblerExitCode Assemble();
+  Assembler();
+  AssemblerExitCode Assemble(const std::string &asmFilePath,
+                             const std::string &objFilePath,
+                             const std::string &lstFilePath);
 };
