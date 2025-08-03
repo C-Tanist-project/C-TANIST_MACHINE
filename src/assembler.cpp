@@ -559,9 +559,14 @@ void Assembler::ResetAssembler() {
   literalTable.clear();
 }
 
-void notifyAssembling(std::vector<std::string> paths) {
-  for (const auto path : paths) {
+void Assembler::NotifyAssembling(std::vector<std::string> paths) {
+  for (const auto &path : paths) {
     size_t lastSlash = path.rfind('/');
-    std::string asmFilePath = path.substr(lastSlash + 1);
+    std::string fileName = path.substr(lastSlash + 1, path.find_last_of('.'));
+    std::string asmFilePath = path;
+    std::string objFilePath = "./obj/" + fileName + ".obj";
+    std::string lstFilePath = "./lst/" + fileName + ".lst";
+
+    Assemble(asmFilePath, objFilePath, lstFilePath);
   }
 }

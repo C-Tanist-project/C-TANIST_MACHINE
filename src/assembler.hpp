@@ -93,11 +93,11 @@ class Assembler {
   void WriteObjectCodeFile();
   void WriteListingFile();
   void ResetAssembler();
-  void notifyAssembling(std::vector<std::string> path);
-
- public:
-  Assembler();
   AssemblerExitCode Assemble(const std::string &asmFilePath,
                              const std::string &objFilePath,
                              const std::string &lstFilePath);
+
+ public:
+  Assembler();
+  void NotifyAssembling(std::vector<std::string> paths);
 };
