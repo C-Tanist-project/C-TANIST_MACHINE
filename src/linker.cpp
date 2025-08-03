@@ -11,6 +11,24 @@
 
 Linker::Linker() {}
 
+void Linker::FirstPass(const std::vector<std::string> &objFilePaths) {
+  modules.clear();
+  globalSymbolTable.clear();
+  errors.clear();
+  totalStackSize = 0;
+  currentLoadAddress = 0;
+
+  for (const auto &filePath : objFilePaths) {
+    ReadObjectCodeFile(filePath);
+  }
+
+  for (const auto &[name, symbol] : globalSymbolTable) {
+    if (symbol.first == UNRESOLVED_ADDRESS) {
+      errors.push_back("Símbolo global não resolvido: " + name);
+    }
+  }
+}
+
 // escreve o arquivo .obj com base no vetor this->objectCode
 void Linker::ReadObjectCodeFile(const std::string &filePath) {
   std::ifstream objFile(filePath, std::ios::binary);
@@ -90,7 +108,11 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
             addresses[j] = addr;
           }
 
-          module.intUseTable[label] = addresses;
+          module.intUseTable[label] = std::move(addresses);
+
+          if (globalSymbolTable.contains(label)) {
+            globalSymbolTable[label] = {UNRESOLVED_ADDRESS, filePath};
+          }
         }
         break;
       }
