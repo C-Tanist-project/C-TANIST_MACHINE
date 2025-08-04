@@ -562,7 +562,8 @@ void Assembler::ResetAssembler() {
 void Assembler::NotifyAssembling(std::vector<std::string> paths) {
   for (const auto &path : paths) {
     size_t lastSlash = path.rfind('/');
-    std::string fileName = path.substr(lastSlash + 1, path.find_last_of('.'));
+    std::string fileName =
+        path.substr(lastSlash + 1, path.find_last_of('.') - (lastSlash + 1));
     std::string asmFilePath = path;
     std::string objFilePath = "./obj/" + fileName + ".obj";
     std::string lstFilePath = "./lst/" + fileName + ".lst";
