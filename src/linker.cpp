@@ -7,10 +7,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "types.hpp"
-
 Linker::Linker() {}
 
+void Linker::SecondPass() {
+
+};
 void Linker::FirstPass(const std::vector<std::string> &objFilePaths) {
   modules.clear();
   globalSymbolTable.clear();
@@ -126,6 +127,26 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
         break;
       }
 
+      case ObjSectionType::RELOCATION: {
+        // Ler a tabela de relocação: número de entradas, então (address, type)
+        // pairs
+        int16_t relocCount;
+        objFile.read(reinterpret_cast<char *>(&relocCount), sizeof(int16_t));
+
+        for (int i = 0; i < relocCount; ++i) {
+          int16_t address;
+          int16_t typeVal;
+
+          objFile.read(reinterpret_cast<char *>(&address), sizeof(int16_t));
+          objFile.read(reinterpret_cast<char *>(&typeVal), sizeof(int16_t));
+
+          // Armazena a entrada relativa ao módulo (não somamos
+          // module.loadAddress aqui)
+          module.relocationTable[address] = static_cast<OperandFormat>(typeVal);
+        }
+        break;
+      }
+
       case ObjSectionType::END:
         finished = true;
         break;
@@ -168,8 +189,14 @@ void Linker::printModules() {
       std::cout << "]\n";
     }
 
+    std::cout << "Relocation Table:\n";
+    for (const auto &relocIndex : mod.relocationTable) {
+      std::cout << "  Relocate address index: " << relocIndex.first << "\n";
+    }
+
     std::cout << "Stack Size: " << mod.stackSize << "\n";
     std::cout << "Start Address: " << mod.startAddress << "\n";
     std::cout << "Load Address: " << mod.loadAddress << "\n";
+    std::cout << "\n";
   }
 }

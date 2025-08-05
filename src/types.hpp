@@ -71,7 +71,7 @@ enum class ObjSectionType : int16_t {
   STACK_SIZE = 0x01,
   INTDEF = 0x02,
   INTUSE = 0x03,
-  RELOCATION = 0x04,
-  CODE = 0x05,
+  CODE = 0x04,
+  RELOCATION = 0x05,
   END = 0xFF
 };
