@@ -1,7 +1,7 @@
- intdef Amilton
- intdef Hellida
-Ines intuse
-Jorge intuse
+ intdef Edegar
+ intdef Gloria
+Vera intuse
+Ibanes intuse
 Bento COPY Catarina Dorival
  BR Estela
  LOAD Felipe
@@ -9,14 +9,14 @@ Bento COPY Catarina Dorival
  ADD @6
  DIVIDE @3
  LOAD @3
- SUB Ines
- CALL Jorge
- LOAD Amilton
+ SUB Vera
+ CALL Ibanes
+ LOAD Edegar
 Felipe CONST 3
 Estela CONST 0
 Gustavo CONST 5
 Catarina CONST 2
 Dorival CONST 4
-Amilton SPACE
-Hellida SPACE
+Edegar SPACE
+Gloria SPACE
  End

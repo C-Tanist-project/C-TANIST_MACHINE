@@ -9,7 +9,14 @@
 
 Linker::Linker() {}
 
+void Linker::GenerateOutput(const std::string &outputName) {
+  // criar o .hpx contendo código binário + tabela de relocação global
+}
 void Linker::SecondPass() {
+
+  // Concatenar os módulos
+  // Resolver os símbolos da intUseTable
+  // criar tabela de relocação global
 
 };
 void Linker::FirstPass(const std::vector<std::string> &objFilePaths) {
@@ -28,6 +35,9 @@ void Linker::FirstPass(const std::vector<std::string> &objFilePaths) {
       errors.push_back("Símbolo global não resolvido: " + name);
     }
   }
+  // Relocar os endereços na intUseTable de cada módulo
+  // Relocar os endereços no vetor do código binário de cada módulo
+  // Relocar endereços da relocTable também
 }
 
 // escreve o arquivo .obj com base no vetor this->objectCode
@@ -128,8 +138,6 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
       }
 
       case ObjSectionType::RELOCATION: {
-        // Ler a tabela de relocação: número de entradas, então (address, type)
-        // pairs
         int16_t relocCount;
         objFile.read(reinterpret_cast<char *>(&relocCount), sizeof(int16_t));
 
@@ -140,8 +148,6 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
           objFile.read(reinterpret_cast<char *>(&address), sizeof(int16_t));
           objFile.read(reinterpret_cast<char *>(&typeVal), sizeof(int16_t));
 
-          // Armazena a entrada relativa ao módulo (não somamos
-          // module.loadAddress aqui)
           module.relocationTable[address] = static_cast<OperandFormat>(typeVal);
         }
         break;
@@ -194,6 +200,12 @@ void Linker::printModules() {
       std::cout << "  Relocate address index: " << relocIndex.first << "\n";
     }
 
+    std::cout << "Global Symbol Table:\n";
+    for (const auto &[symbol, where] : globalSymbolTable) {
+      std::cout << "Símbolo: " << symbol << " " << "Endereço: " << where.first
+                << " "
+                << "Módulo: " << where.second << std::endl;
+    }
     std::cout << "Stack Size: " << mod.stackSize << "\n";
     std::cout << "Start Address: " << mod.startAddress << "\n";
     std::cout << "Load Address: " << mod.loadAddress << "\n";
