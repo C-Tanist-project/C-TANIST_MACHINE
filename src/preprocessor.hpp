@@ -48,6 +48,7 @@ class MacroProcessor {
   std::vector<Macro_t *> definedMacros;
 
   std::string asmFilePath;
+  std::string outputFilePath;
 
   Macro_t *currentMacroDefinition = NULL;
   Macro_t *currentMacroCall = NULL;
