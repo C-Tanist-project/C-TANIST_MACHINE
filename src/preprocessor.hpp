@@ -26,29 +26,42 @@ typedef struct {
 } MacroParameter_t;
 
 typedef struct {
+  int level;
+  std::vector<std::string> actualParameters;
+} Expansion_t;
+
+typedef struct {
   std::string macroName;
+  std::string macroPrototype;
   std::string macroSkeleton;
 } Macro_t;
 
 inline std::string CreateSubstitutionPattern(int level, int position);
 inline ParemeterCoordinates ReadSubstitutionPattern(std::string input);
-std::regex CreateReverseRegex(std::string input);
 
 class MacroProcessor {
-  int levelCounter;
-  bool isExpanding;
-  std::vector<std::string> actualParameters;
+  int definitionLevel;
+  int expansionLevel;
+  std::deque<std::unique_ptr<std::stringstream>> inputSourceStack;
+  std::deque<Expansion_t> actualParametersStack;
   std::deque<MacroParameter_t> formalParameters;
   std::vector<Macro_t *> definedMacros;
+
   std::string asmFilePath;
 
   Macro_t *currentMacroDefinition = NULL;
   Macro_t *currentMacroCall = NULL;
+  std::stringstream *currentInputSource = NULL;
 
   inline void ProcessPrototype(std::string line);
   inline void PushFormalParameter(std::string name, int position);
   Macro_t *SearchDefinedMacros(std::string name);
-  void ParseActualParameters(std::string line, std::string macroName);
+  std::vector<std::string> GetActualParameterList(std::string line,
+                                                  Macro_t *foundMacro);
+  std::string ReplaceFormalParameters(std::string line);
+  std::string ReplaceSubstitutionPatterns(std::string line);
+  void PopFormalParameterLevel(int level);
+  void PopActualParameterLevel(int level);
 
 public:
   MacroProcessor(const std::string &asmFilePath);

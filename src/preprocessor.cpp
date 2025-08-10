@@ -9,10 +9,6 @@ static inline bool IsEquals(const std::string &a, const std::string &b) {
   return std::equal(a.begin(), a.end(), b.begin(), b.end(), IcharEquals);
 }
 
-std::regex CreateReverseRegex(std::string input) {
-  return std::regex("^((?!" + input + ").)*");
-}
-
 inline std::string CreateSubstitutionPattern(int level, int position) {
   return std::format("#({},{})", level, position);
 }
@@ -27,49 +23,49 @@ inline ParemeterCoordinates ReadSubstitutionPattern(std::string input) {
 
 inline void MacroProcessor::PushFormalParameter(std::string name,
                                                 int position) {
-  this->formalParameters.push_back(
-      MacroParameter_t{.name = name,
-                       .coordinates = ParemeterCoordinates{
-                           .level = this->levelCounter, .position = position}});
+  MacroParameter_t *newParameter = new MacroParameter_t;
+
+  ParemeterCoordinates *newPosition = new ParemeterCoordinates;
+
+  *newPosition = {.level = this->definitionLevel, .position = position};
+
+  newParameter->name = name;
+  newParameter->coordinates = {.level = this->definitionLevel,
+                               .position = position};
+
+  this->formalParameters.push_back(*newParameter);
 }
 
 inline void MacroProcessor::ProcessPrototype(std::string line) {
-  std::regex matchPrototypeParameter("\\&\\w+\\b", std::regex_constants::icase);
-  std::regex matchPrototypeName("^\\s*(?:&\\w+\\s+)?(\\w+).*",
-                                std::regex_constants::icase);
-  std::smatch matchName;
-  std::smatch matchParameter;
-  std::string macroName;
+  std::stringstream stringStream(line);
+  std::string currentToken;
+  size_t position = 0;
+  bool isNameFound = false;
 
-  if (std::regex_search(line, matchName, matchPrototypeName)) {
-    macroName = matchName[1].str();
-  } else {
-    throw("MACRO_NAME_NOT_DEFINED");
-  }
+  while (stringStream >> currentToken) {
+    std::stringstream secondaryTokenizer(currentToken);
+    std::string currentSecondaryToken;
 
-  auto lineBegin =
-      std::sregex_iterator(line.begin(), line.end(), matchPrototypeParameter);
-
-  auto lineEnd = std::sregex_iterator();
-
-  int parameterCount = std::distance(lineBegin, lineEnd);
-  int parameterPosition = 0;
-
-  if (parameterCount > 0 && !this->isExpanding) {
-    for (std::sregex_iterator i = lineBegin; i != lineEnd; i++) {
-      matchParameter = *i;
-      parameterPosition++;
-      std::string matchString = matchParameter.str();
-      PushFormalParameter(matchString, parameterPosition);
+    while (std::getline(secondaryTokenizer, currentSecondaryToken, ',')) {
+      if (currentSecondaryToken[0] == '&') {
+        PushFormalParameter(currentSecondaryToken, position);
+        position++;
+      } else {
+        if (!isNameFound) {
+          if (this->definitionLevel == 1) {
+            currentMacroDefinition->macroName = currentSecondaryToken;
+          }
+          isNameFound = true;
+        } else {
+          // só a primeira "coisa" que não é parâmetro é nome de macro (faz
+          // sentido, né?)
+          continue;
+        }
+      }
     }
   }
-
-  if (this->levelCounter > 1) {
-    this->currentMacroDefinition->macroSkeleton.append(line + '\n');
-  }
-
-  if (this->currentMacroDefinition != NULL) {
-    this->currentMacroDefinition->macroName = macroName;
+  if (this->definitionLevel == 1) {
+    currentMacroDefinition->macroPrototype = line;
   }
 }
 
@@ -78,11 +74,12 @@ Macro_t *MacroProcessor::SearchDefinedMacros(std::string line) {
   std::smatch matchName;
   std::string macroName;
 
-  auto words_begin = std::sregex_iterator(line.begin(), line.end(), regexName);
-  auto words_end = std::sregex_iterator();
+  auto wordsBegin = std::sregex_iterator(line.begin(), line.end(), regexName);
+  auto wordsEnd = std::sregex_iterator();
 
   std::vector<std::string> tokens;
-  for (auto i = words_begin; i != words_end; ++i) {
+
+  for (auto i = wordsBegin; i != wordsEnd; ++i) {
     tokens.push_back((*i).str());
   }
 
@@ -107,40 +104,158 @@ Macro_t *MacroProcessor::SearchDefinedMacros(std::string line) {
   return NULL;
 }
 
-void MacroProcessor::ParseActualParameters(std::string line,
-                                           std::string macroName) {
-  this->actualParameters.clear();
+std::vector<std::string>
+MacroProcessor::GetActualParameterList(std::string line, Macro_t *foundMacro) {
+  std::vector<std::string> currentActualParameters;
 
-  std::stringstream streamFromLine(line);
+  std::string prototype = foundMacro->macroPrototype;
+  std::string name = foundMacro->macroName;
 
-  std::string token;
+  size_t prototypeNamePosition = prototype.find(name);
+  size_t lineNamePosition = line.find(name);
 
-  while (streamFromLine >> token) {
-    std::stringstream streamFromToken(token);
-    std::string subtoken;
-    while (std::getline(streamFromToken, subtoken, ',')) {
-      if (subtoken != macroName) {
-        this->actualParameters.push_back(subtoken);
+  std::string prototypeLeftPart = prototype.substr(0, prototypeNamePosition);
+
+  std::string lineLeftPart = line.substr(0, lineNamePosition);
+  std::string lineRightPart = line.substr(lineNamePosition + name.length());
+
+  std::stringstream leftPrototypeStream(prototypeLeftPart);
+  std::stringstream leftLineStream(lineLeftPart);
+  std::stringstream rightLineStream(lineRightPart);
+
+  std::string currentFormalParameter;
+
+  while (leftPrototypeStream >> currentFormalParameter) {
+    std::string currentActualParameter;
+    if (!(leftLineStream >> currentActualParameter)) {
+      currentActualParameters.push_back("    ");
+    } else {
+      currentActualParameters.push_back(currentActualParameter);
+    }
+  }
+
+  std::string currentParameter;
+  while (std::getline(rightLineStream, currentParameter, ',')) {
+    size_t first = currentParameter.find_first_not_of(" \t");
+    if (first == std::string::npos) {
+      currentActualParameters.push_back("");
+    } else {
+      size_t last = currentParameter.find_last_not_of(" \t");
+      currentActualParameters.push_back(
+          currentParameter.substr(first, (last - first + 1)));
+    }
+  }
+
+  return currentActualParameters;
+}
+
+std::string MacroProcessor::ReplaceFormalParameters(std::string line) {
+  std::regex matchFormalParameter("\\&\\w+\\b", std::regex_constants::icase);
+  std::sregex_iterator it(line.cbegin(), line.cend(), matchFormalParameter);
+  std::sregex_iterator end;
+
+  if (it == end)
+    return line;
+
+  std::string newLine;
+  auto lastMatchPosition = line.cbegin();
+
+  for (; it != end; ++it) {
+    std::smatch match = *it;
+    newLine += match.prefix().str();
+    bool foundParameter = false;
+
+    for (auto i = formalParameters.rbegin(); i != formalParameters.rend();
+         ++i) {
+      if (IsEquals(i->name, match.str())) {
+        foundParameter = true;
+        newLine += CreateSubstitutionPattern(i->coordinates.level,
+                                             i->coordinates.position);
+        break;
       }
+    }
+
+    if (!foundParameter) {
+      newLine += match.str();
+    }
+
+    lastMatchPosition = match.suffix().first;
+  }
+
+  newLine.append(lastMatchPosition, line.cend());
+
+  return newLine;
+}
+
+std::string MacroProcessor::ReplaceSubstitutionPatterns(std::string line) {
+  std::regex matchSubstitutionPattern("#\\((\\d+),(\\d+)\\)");
+  std::sregex_iterator it(line.cbegin(), line.cend(), matchSubstitutionPattern);
+  std::sregex_iterator end;
+
+  std::string newLine;
+  auto lastMatchPosition = line.cbegin();
+
+  for (; it != end; ++it) {
+    std::smatch match = *it;
+
+    newLine += match.prefix().str();
+    ParemeterCoordinates coords = ReadSubstitutionPattern(match.str());
+
+    if (coords.level == 1) {
+      if ((size_t)coords.position <
+          this->actualParametersStack.back().actualParameters.size()) {
+        newLine += this->actualParametersStack.back()
+                       .actualParameters[coords.position];
+      } else {
+        exit(-1);
+      }
+    } else {
+      newLine += CreateSubstitutionPattern(coords.level - 1, coords.position);
+    }
+    lastMatchPosition = match.suffix().first;
+  }
+  newLine.append(lastMatchPosition, line.cend());
+
+  return newLine;
+}
+
+void MacroProcessor::PopFormalParameterLevel(int level) {
+  for (auto i = this->formalParameters.begin();
+       i != this->formalParameters.end();) {
+    if ((*i).coordinates.level == level && !this->formalParameters.empty()) {
+      i = this->formalParameters.erase(i);
+    } else {
+      i++;
+    }
+  }
+}
+void MacroProcessor::PopActualParameterLevel(int level) {
+  for (auto i = this->actualParametersStack.begin();
+       i != this->actualParametersStack.end();) {
+    if ((*i).level == level && !this->actualParametersStack.empty()) {
+      i = this->actualParametersStack.erase(i);
+    } else {
+      i++;
     }
   }
 }
 
 MacroProcessor::MacroProcessor(const std::string &asmFilePath) {
-  this->isExpanding = false;
   this->asmFilePath = asmFilePath;
-  this->levelCounter = 0;
+  this->definitionLevel = 0;
+  this->expansionLevel = 0;
 }
 
 void MacroProcessor::Pass() {
   std::ifstream file(asmFilePath);
-  std::stringstream expansionStream;
+
   std::string line;
+
   std::regex matchMacro("\\bmacro\\b", std::regex_constants::icase);
   std::regex matchMend("\\bmend\\b", std::regex_constants::icase);
-  std::regex matchSubstitutionPattern("#\\((\\d+),(\\d+)\\)");
-  std::regex matchFormalParameter("\\&\\w+\\b", std::regex_constants::icase);
-  this->actualParameters.clear();
+
+  this->actualParametersStack.clear();
+
   bool nextLineIsPrototype = false;
 
   if (!file.is_open()) {
@@ -148,126 +263,93 @@ void MacroProcessor::Pass() {
     exit(-1);
   }
 
-  std::getline(file, line);
+  if (!std::getline(file, line)) {
+    perror("Arquivo vazio");
+    exit(-1);
+  }
 
   while (!line.empty()) {
-    if ((this->currentMacroCall = SearchDefinedMacros(line)) != NULL &&
-        !nextLineIsPrototype) {
-      this->isExpanding = true;
-      this->actualParameters.clear();
-      ParseActualParameters(line, currentMacroCall->macroName);
-      expansionStream.str(this->currentMacroCall->macroSkeleton);
-      expansionStream.clear();
-    }
 
-    else if (nextLineIsPrototype && !this->isExpanding) {
-      ProcessPrototype(line);
-      nextLineIsPrototype = false;
-    }
-
-    else if (std::regex_search(line, matchMacro)) {
-      this->levelCounter++;
-      if (levelCounter == 1) {
-        Macro_t *newMacro = new Macro_t;
-        this->currentMacroDefinition = newMacro;
-        this->definedMacros.push_back(newMacro);
-      } else {
-        if (this->currentMacroDefinition != NULL) {
+    do {
+      if (std::regex_search(line, matchMacro)) {
+        nextLineIsPrototype = true;
+        this->definitionLevel++;
+        if (this->definitionLevel == 1) {
+          this->currentMacroDefinition = new Macro_t;
+          this->definedMacros.push_back(this->currentMacroDefinition);
+        } else {
           this->currentMacroDefinition->macroSkeleton.append(line + '\n');
         }
+        continue;
       }
-      nextLineIsPrototype = true;
-    }
 
-    else if (std::regex_search(line, matchMend)) {
-      if (this->levelCounter == 0) {
-        this->actualParameters.clear();
-      } else if (!this->isExpanding) {
-        for (auto i = this->formalParameters.begin();
-             i != this->formalParameters.end();) {
-          if ((*i).coordinates.level == this->levelCounter &&
-              !this->formalParameters.empty()) {
-            i = this->formalParameters.erase(i);
-          } else {
-            i++;
-          }
-        }
-        this->levelCounter--;
-        this->currentMacroDefinition->macroSkeleton.append(line + '\n');
+      if (nextLineIsPrototype == true) {
+        ProcessPrototype(line);
+        if (this->definitionLevel > 0)
+          this->currentMacroDefinition->macroSkeleton.append(line + '\n');
+        nextLineIsPrototype = false;
+        continue;
       }
-    } else {
-      if (this->isExpanding) {
-        std::sregex_iterator it(line.cbegin(), line.cend(),
-                                matchSubstitutionPattern);
-        std::sregex_iterator end;
 
-        std::string newLine;
-        auto lastMatchPosition = line.cbegin();
+      Macro_t *foundMacro = SearchDefinedMacros(line);
 
-        for (; it != end; ++it) {
-          std::smatch match = *it;
+      if (foundMacro != NULL) {
+        if (this->definitionLevel == 0) {
+          this->expansionLevel++;
+          std::vector<std::string> aps =
+              GetActualParameterList(line, foundMacro);
+          this->actualParametersStack.push_back(Expansion_t{
+              .level = this->expansionLevel, .actualParameters = aps});
 
-          newLine += match.prefix().str();
-          ParemeterCoordinates coords = ReadSubstitutionPattern(match.str());
+          this->currentMacroCall = foundMacro;
 
-          if (coords.level == 1) {
-            if (coords.position > 0 &&
-                (size_t)coords.position <= this->actualParameters.size()) {
-              newLine += this->actualParameters[coords.position - 1];
-            } else {
-              exit(-1);
-            }
-          } else {
-            newLine +=
-                CreateSubstitutionPattern(coords.level - 1, coords.position);
-          }
-          lastMatchPosition = match.suffix().first;
+          auto newStream = std::make_unique<std::stringstream>();
+          newStream->str(foundMacro->macroSkeleton);
+
+          std::string dummy;
+          std::getline(*newStream, dummy);
+
+          this->inputSourceStack.push_back(std::move(newStream));
         }
-        newLine.append(lastMatchPosition, line.cend());
-        line = newLine;
-
-      } else if (this->levelCounter > 0) {
-        std::sregex_iterator it(line.cbegin(), line.cend(),
-                                matchFormalParameter);
-        std::sregex_iterator end;
-
-        std::string newLine;
-        auto lastMatchPosition = line.cbegin();
-
-        for (; it != end; ++it) {
-          std::smatch match = *it;
-          newLine += match.prefix().str();
-          bool foundParameter = false;
-
-          for (auto it = formalParameters.rbegin();
-               it != formalParameters.rend(); ++it) {
-            if (it->name == match.str()) {
-              foundParameter = true;
-              newLine += CreateSubstitutionPattern(it->coordinates.level,
-                                                   it->coordinates.position);
-              break;
-            }
-          }
-          if (!foundParameter) {
-            exit(-1);
-          }
-
-          lastMatchPosition = match.suffix().first;
+        if (this->definitionLevel > 0 && this->expansionLevel == 0) {
+          line = ReplaceFormalParameters(line);
         }
-        newLine.append(lastMatchPosition, line.cend());
-        line = newLine;
+        if (this->definitionLevel > 0) {
+          this->currentMacroDefinition->macroSkeleton.append(line + '\n');
+        }
+        continue;
       }
-      if (this->levelCounter == 0) {
+
+      if (std::regex_search(line, matchMend)) {
+        if (this->definitionLevel == 0) {
+          this->inputSourceStack.pop_back();
+          PopActualParameterLevel(this->expansionLevel);
+          this->expansionLevel--;
+        } else {
+          if (this->expansionLevel == 0) {
+            PopFormalParameterLevel(this->definitionLevel);
+          }
+          this->currentMacroDefinition->macroSkeleton.append(line + '\n');
+          this->definitionLevel--;
+        }
+        continue;
+      }
+
+      if (this->expansionLevel == 0 && this->definitionLevel > 0) {
+        line = ReplaceFormalParameters(line);
+      }
+
+      if (this->definitionLevel == 0) {
         std::cout << line << std::endl;
       } else {
         this->currentMacroDefinition->macroSkeleton.append(line + '\n');
       }
-    }
-    if (this->isExpanding) {
-      if (!std::getline(expansionStream, line)) {
-        this->isExpanding = false;
-        std::getline(file, line);
-      }
+
+    } while (false);
+
+    if (this->expansionLevel > 0) {
+      std::getline(*(this->inputSourceStack.back().get()), line);
+      line = ReplaceSubstitutionPatterns(line);
     } else {
       std::getline(file, line);
     }
