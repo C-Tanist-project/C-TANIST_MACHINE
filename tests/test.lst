@@ -1,0 +1,14 @@
+
+LISTAGEM DE CÓDIGO
+[00001 - 13 24 25] 005 - COPY Catarina Dorival
+[00004 - 0 22] 006 - BR Estela
+[00006 - 3 21] 007 - LOAD Felipe
+[00008 - 3 23] 008 - LOAD Gustavo
+[00010 - 2 29] 009 - ADD @6
+[00012 - 10 28] 010 - DIVIDE @3
+[00014 - 3 28] 011 - LOAD @3
+[00016 - 6 0] 012 - SUB Ines
+[00018 - 15 0] 013 - CALL Jorge
+[00020 - 3 26] 014 - LOAD Amilton
+
+NENHUM ERRO DETECTADO

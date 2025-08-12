@@ -29,6 +29,8 @@ typedef enum { ACC, R0, R1 } Registers;
 
 typedef enum { IMMEDIATE = 0, DIRECT = 1, INDIRECT = 2 } OperandFormat;
 
+constexpr int16_t UNRESOLVED_ADDRESS = -1;
+
 typedef enum {
   OP_BR = 0,
   OP_BRPOS = 1,
