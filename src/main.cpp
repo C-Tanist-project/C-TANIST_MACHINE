@@ -6,10 +6,16 @@
 
 #include "assembler.hpp"
 #include "linker.hpp"
+#include "preprocessor.hpp"
 #include "ui.hpp"
 #include "vm.hpp"
 
 int main(int argc, char *argv[]) {
+  if (argc > 1 && strcmp(argv[1], "preprocess") == 0) {
+    MacroProcessor macross(argv[2]);
+    macross.Pass();
+    return 0;
+  }
   Operations::InitializeMap();
   VMEngine engine;
   VMState vm;
