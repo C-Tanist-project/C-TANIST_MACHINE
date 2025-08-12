@@ -5,10 +5,16 @@
 #include <thread>
 
 #include "assembler.hpp"
+#include "preprocessor.hpp"
 #include "ui.hpp"
 #include "vm.hpp"
 
 int main(int argc, char *argv[]) {
+  if (argc > 1 && strcmp(argv[1], "preprocess") == 0) {
+    MacroProcessor macross(argv[2]);
+    macross.Pass();
+    return 0;
+  }
   std::string test = "tests/test.asm";
   std::string objFilePath = "tests/test.obj";
   std::string lstFilePath = "tests/test.lst";
