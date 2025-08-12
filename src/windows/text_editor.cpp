@@ -4,6 +4,7 @@
 #include <regex>
 #include <string>
 
+#include "src/assembler.hpp"
 #include "src/ui.hpp"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -1049,15 +1050,50 @@ void TextEditor::Render() {
   }
 }
 
+struct Tab {
+  std::string title;
+  std::filesystem::path filePath;
+  TextEditor editor;
+};
+
+static std::vector<Tab> tabs;
+static std::vector<std::filesystem::path> openFilePaths;
+static int currentTab = -1;
+
+void AddTab(const std::filesystem::path& path, const std::string& content) {
+  Tab newTab;
+  newTab.filePath = path;
+  newTab.title = path.filename().string();
+  newTab.editor.SetText(content);
+
+  auto def = newTab.editor.GetLanguageDefinition();
+  const char* extra_keywords[] = {
+      "ADD",   "BR",    "BRNEG", "BRPOS",  "BRZERO", "CALL",  "COPY",  "DIVIDE",
+      "LOAD",  "MULT",  "PUSH",  "POP",    "READ",   "RET",   "STOP",  "SUB",
+      "WRITE", "START", "END",   "INTDEF", "INTUSE", "CONST", "SPACE", "STACK"};
+
+  for (auto& kw : extra_keywords) def.mKeywords.insert(kw);
+  newTab.editor.SetLanguageDefinition(def);
+
+  tabs.push_back(std::move(newTab));
+  openFilePaths.push_back(path);
+  currentTab = (int)tabs.size() - 1;
+}
+
+void RemoveTab(int index) {
+  if (index < 0 || index >= (int)tabs.size()) return;
+  tabs.erase(tabs.begin() + index);
+  openFilePaths.erase(openFilePaths.begin() + index);
+  if (currentTab >= index) currentTab--;
+  if (tabs.empty()) currentTab = -1;
+}
+
 void RenderTextEditor(bool& window) {
-  static std::filesystem::path currentPath;
   static bool openDialog = false;
-  static bool openPopup = false;
-  static TextEditor editor;
 
   if (!window) return;
 
-  ImVec2 fixedSize(600, 400);
+  ImVec2 fixedSize(800, 600);
   ImGui::SetNextWindowSize(fixedSize, ImGuiCond_FirstUseEver);
 
   if (!ImGui::Begin("Editor de Texto", &window,
@@ -1065,26 +1101,46 @@ void RenderTextEditor(bool& window) {
     ImGui::End();
     return;
   }
-
-  ImVec2 totalAvailable = ImGui::GetContentRegionAvail();
-  ImVec2 editorSize = ImVec2(totalAvailable.x, totalAvailable.y - 50.0f);
-  editor.Render("TextEditor", editorSize, true);
+  float editorHeight = 300.0f;
+  ImGui::BeginChild("##EditorArea", ImVec2(0, editorHeight), true);
+  if (ImGui::BeginTabBar("EditorAbas", ImGuiTabBarFlags_Reorderable)) {
+    for (int i = 0; i < tabs.size(); i++) {
+      bool open = true;
+      if (ImGui::BeginTabItem(tabs[i].title.c_str(), &open)) {
+        currentTab = i;
+        ImVec2 totalAvailable = ImGui::GetContentRegionAvail();
+        ImVec2 editorSize = ImVec2(totalAvailable.x, totalAvailable.y - 50.0f);
+        tabs[i].editor.Render("TextEditor", editorSize, true);
+        ImGui::EndTabItem();
+      }
+      if (!open) {
+        RemoveTab(i);
+        i--;
+      }
+    }
+    ImGui::EndTabBar();
+  }
+  ImGui::EndChild();
 
   ImGui::Separator();
   ImGui::Spacing();
   ImGui::BeginChild("##ButtonsRow", ImVec2(0, 40), false);
 
-  ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 140);
-
+  ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 220);
+  if (ImGui::Button("Executar", ImVec2(65, 30))) {
+  }
+  ImGui::SameLine();
   if (ImGui::Button("Carregar", ImVec2(65, 30))) {
     openDialog = true;
   }
   ImGui::SameLine();
   if (ImGui::Button("Salvar", ImVec2(65, 30))) {
-    std::ofstream file(currentPath);
-    if (file.is_open()) {
-      file << editor.GetText();
-      file.close();
+    if (currentTab >= 0) {
+      std::ofstream file(tabs[currentTab].filePath);
+      if (file.is_open()) {
+        file << tabs[currentTab].editor.GetText();
+        file.close();
+      }
     }
   }
 
@@ -1105,31 +1161,18 @@ void RenderTextEditor(bool& window) {
     if (ImGuiFileDialog::Instance()->IsOk()) {
       std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 #ifdef _WIN32
-      currentPath.assign(IGFD::Utils::UTF8Decode(filePathName));
+      std::filesystem::path currentPath = IGFD::Utils::UTF8Decode(filePathName);
 #else
-      currentPath.assign(filePathName);
+      std::filesystem::path currentPath = filePathName;
 #endif
 
       std::ifstream file(currentPath);
       if (file.is_open()) {
         std::stringstream ss;
         ss << file.rdbuf();
-        editor.SetText(ss.str());
         file.close();
+        AddTab(currentPath, ss.str());
       }
-
-      auto def = editor.GetLanguageDefinition();
-
-      const char* extra_keywords[] = {
-          // Instruções de máquina
-          "ADD", "BR", "BRNEG", "BRPOS", "BRZERO", "CALL", "COPY", "DIVIDE",
-          "LOAD", "MULT", "PUSH", "POP", "READ", "RET", "STOP", "SUB", "WRITE",
-          // Pseudo-instruções
-          "START", "END", "INTDEF", "INTUSE", "CONST", "SPACE", "STACK"};
-
-      for (auto& kw : extra_keywords) def.mKeywords.insert(kw);
-
-      editor.SetLanguageDefinition(def);
 
       ImGuiFileDialog::Instance()->Close();
     } else {
@@ -2089,8 +2132,8 @@ void TextEditor::ColorizeRange(int aFromLine, int aToLine) {
 
       if (hasTokenizeResult == false) {
         // todo : remove
-        // printf("using regex for %.*s\n", first + 10 < last ? 10 : int(last -
-        // first), first);
+        // printf("using regex for %.*s\n", first + 10 < last ? 10 : int(last
+        // - first), first);
 
         for (auto& p : mRegexList) {
           if (std::regex_search(first, last, results, p.first,
@@ -2152,8 +2195,8 @@ void TextEditor::ColorizeInternal() {
     auto withinString = false;
     auto withinSingleLineComment = false;
     auto withinPreproc = false;
-    auto firstChar =
-        true;  // there is no other non-whitespace characters in the line before
+    auto firstChar = true;     // there is no other non-whitespace characters in
+                               // the line before
     auto concatenate = false;  // '\' on the very end of the line
     auto currentLine = 0;
     auto currentIndex = 0;
