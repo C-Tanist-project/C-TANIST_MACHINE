@@ -1,0 +1,25 @@
+MACRO
+SETUP_MATH &MODE
+        MACRO
+&LABEL  CALCULATE &VAL1,&VAL2
+&LABEL  LOAD    &VAL1
+        &MODE   &VAL2
+        STORE   RESULT
+        MEND
+MEND
+        START TESTE
+        SETUP_MATH ADD
+*
+LOOP1   CALCULATE   X,Y
+        SETUP_MATH SUB
+*
+LOOP2   CALCULATE   A,B
+*
+        STOP
+*
+X       SPACE
+Y       SPACE
+A       SPACE
+B       SPACE
+RESULT  SPACE
+        END

@@ -59,7 +59,6 @@ In case of doubt, refer to the [meson installation manual](https://mesonbuild.co
 - [@duhdah](https://github.com/duhdah)
 - [@gckneip](https://github.com/gckneip)
 - [@mthsrnn](https://www.github.com/mthsrnn)
-- [@RaffaellSM](https://github.com/RaffaellSM)
 - [@Vitor-a-o](https://github.com/Vitor-a-o)
 
 ## Acknowledgements

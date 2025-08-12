@@ -5,49 +5,36 @@
 #include <thread>
 
 #include "assembler.hpp"
+#include "linker.hpp"
+#include "preprocessor.hpp"
 #include "ui.hpp"
 #include "vm.hpp"
 
 int main(int argc, char *argv[]) {
-  std::string test = "tests/test.asm";
-  std::string objFilePath = "tests/test.obj";
-  std::string lstFilePath = "tests/test.lst";
+  if (argc > 1 && strcmp(argv[1], "preprocess") == 0) {
+    MacroProcessor macross(argv[2]);
+    macross.Pass();
+    return 0;
+  }
   Operations::InitializeMap();
   VMEngine engine;
   VMState vm;
 
   VMStateSetup(vm);
 
-  Assembler *assembler = new Assembler(test, objFilePath, lstFilePath);
-  AssemblerExitCode exitCode = assembler->Assemble();
+  Assembler *assembler = new Assembler();
+  std::vector<std::string> paths;
+  paths.push_back("./tests/test.asm");
+  paths.push_back("./tests/test2.asm");
+  assembler->NotifyAssembling(paths);
 
-  std::ifstream file(argv[1], std::ios::binary);
-
-  if (!file) {
-    std::cerr << "Error opening file!\n";
-    return 1;
-  }
-
-  int16_t instructionsMemoryAddress = 32;
-
-  int16_t buffer;
-
-  while (file.read(reinterpret_cast<char *>(&buffer), sizeof(buffer))) {
-    vm.memory[instructionsMemoryAddress] = buffer;
-    ++instructionsMemoryAddress;
-  }
+  Linker *linker = new Linker;
 
   std::thread engineThread(&VMEngine::Run, &engine, std::ref(vm));
 
   GLFWwindow *window = MainWindowSetup(1280, 720, "Pentacle VM");
 
   IMGUIsetup(window);
-
-  for (int i = 31; i < 50; ++i) {
-    std::cout << vm.memory[i] << " ";
-  }
-
-  std::cout << std::endl;
 
   SetupCtanistStyle();
 
