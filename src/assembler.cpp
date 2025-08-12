@@ -1,11 +1,7 @@
 #include "assembler.hpp"
 
-#include <fstream>
-#include <iostream>
 #include <regex>
 #include <string>
-#include <unordered_map>
-#include <vector>
 
 std::unordered_map<std::string, int16_t> opcodes = {
     {"ADD", 2},   {"BR", 0},    {"BRNEG", 5},   {"BRPOS", 1}, {"BRZERO", 4},
@@ -13,17 +9,16 @@ std::unordered_map<std::string, int16_t> opcodes = {
     {"PUSH", 17}, {"POP", 18},  {"READ", 12},   {"RET", 16},  {"STOP", 11},
     {"SUB", 6},   {"WRITE", 8}};
 
-Assembler::Assembler(const std::string &asmFilePath,
-                     const std::string &objFilePath,
-                     const std::string &lstFilePath) {
+Assembler::Assembler() {}
+
+AssemblerExitCode Assembler::Assemble(const std::string &asmFilePath,
+                                      const std::string &objFilePath,
+                                      const std::string &lstFilePath) {
   this->asmFilePath = asmFilePath;
   this->objFilePath = objFilePath;
   this->lstFilePath = lstFilePath;
-  this->locationCounter = 0;
-  this->lineCounter = 0;
-}
 
-AssemblerExitCode Assembler::Assemble() {
+  ResetAssembler();
   this->finalExitCode = this->FirstPass();
   if (this->finalExitCode != SUCCESS) return finalExitCode;
   this->finalExitCode = this->SecondPass();
@@ -469,12 +464,16 @@ void Assembler::WriteObjectCodeFile() {
   }
 
   // STACK_SIZE
-  objFile.put(static_cast<int16_t>(ObjSectionType::STACK_SIZE));
+  int16_t _stackSizeSection = static_cast<int16_t>(ObjSectionType::STACK_SIZE);
+  objFile.write(reinterpret_cast<const char *>(&_stackSizeSection),
+                sizeof(int16_t));
   objFile.write(reinterpret_cast<const char *>(&this->stackSize),
                 sizeof(int16_t));
 
   // INTDEF
-  objFile.put(static_cast<int16_t>(ObjSectionType::INTDEF));
+  int16_t intDefSection = static_cast<int16_t>(ObjSectionType::INTDEF);
+  objFile.write(reinterpret_cast<const char *>(&intDefSection),
+                sizeof(int16_t));
   int16_t defCount = static_cast<int16_t>(this->intDefTable.size());
   objFile.write(reinterpret_cast<const char *>(&defCount), sizeof(int16_t));
 
@@ -486,7 +485,9 @@ void Assembler::WriteObjectCodeFile() {
   }
 
   // INTUSE
-  objFile.put(static_cast<int16_t>(ObjSectionType::INTUSE));
+  int16_t intUseSection = static_cast<int16_t>(ObjSectionType::INTUSE);
+  objFile.write(reinterpret_cast<const char *>(&intUseSection),
+                sizeof(int16_t));
   int16_t useCount = static_cast<int16_t>(this->intUseTable.size());
   objFile.write(reinterpret_cast<const char *>(&useCount), sizeof(int16_t));
 
@@ -503,15 +504,16 @@ void Assembler::WriteObjectCodeFile() {
   }
 
   // CODE
-  objFile.put(static_cast<int16_t>(ObjSectionType::CODE));
+  int16_t codeSection = static_cast<int16_t>(ObjSectionType::CODE);
+  objFile.write(reinterpret_cast<const char *>(&codeSection), sizeof(int16_t));
   int16_t codeSize = static_cast<int16_t>(this->objectCode.size());
   objFile.write(reinterpret_cast<const char *>(&codeSize), sizeof(int16_t));
   objFile.write(reinterpret_cast<const char *>(this->objectCode.data()),
                 this->objectCode.size() * sizeof(int16_t));
 
   // END
-  objFile.put(static_cast<int16_t>(ObjSectionType::END));
-
+  int16_t endSection = static_cast<int16_t>(ObjSectionType::END);
+  objFile.write(reinterpret_cast<const char *>(&endSection), sizeof(int16_t));
   objFile.close();
 }
 
@@ -542,4 +544,30 @@ void Assembler::WriteListingFile() {
   }
 
   lstFile.close();
+}
+
+void Assembler::ResetAssembler() {
+  locationCounter = 0;
+  lineCounter = 0;
+  objectCode.clear();
+  listingLines.clear();
+  listingErrors.clear();
+  intDefTable.clear();
+  intUseTable.clear();
+  stackSize = 0;
+  symbolTable.clear();
+  literalTable.clear();
+}
+
+void Assembler::CallAssembler(std::vector<std::string> paths) {
+  for (const auto &path : paths) {
+    size_t lastSlash = path.rfind('/');
+    std::string fileName =
+        path.substr(lastSlash + 1, path.find_last_of('.') - (lastSlash + 1));
+    std::string asmFilePath = path;
+    std::string objFilePath = "./obj/" + fileName + ".obj";
+    std::string lstFilePath = "./lst/" + fileName + ".lst";
+
+    Assemble(asmFilePath, objFilePath, lstFilePath);
+  }
 }
