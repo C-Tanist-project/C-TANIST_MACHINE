@@ -99,5 +99,5 @@ class Assembler {
 
  public:
   Assembler();
-  void NotifyAssembling(std::vector<std::string> paths);
+  void CallAssembler(std::vector<std::string> paths);
 };

@@ -559,7 +559,7 @@ void Assembler::ResetAssembler() {
   literalTable.clear();
 }
 
-void Assembler::NotifyAssembling(std::vector<std::string> paths) {
+void Assembler::CallAssembler(std::vector<std::string> paths) {
   for (const auto &path : paths) {
     size_t lastSlash = path.rfind('/');
     std::string fileName =
