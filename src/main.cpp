@@ -26,7 +26,8 @@ int main(int argc, char *argv[]) {
   std::vector<std::string> paths;
   paths.push_back("./tests/test.asm");
   paths.push_back("./tests/test2.asm");
-  assembler->NotifyAssembling(paths);
+  // paths.push_back("./tests/test3.asm");
+  assembler->CallAssembler(paths);
 
   Linker *linker = new Linker;
 

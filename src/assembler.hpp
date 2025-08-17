@@ -16,9 +16,11 @@ struct ListingLine {
   std::string sourceCode;
 };
 
-struct ListingError {
+struct AssemblingStatus {
   int16_t lineNumber;
-  std::string error;
+  std::string badToken;
+  AssemblerExitCode exitCode = SUCCESS;
+  std::string erro;
 };
 
 struct AssemblerSymbolData {
@@ -46,11 +48,9 @@ struct Instruction {
 };
 
 struct ParseResult {
-  AssemblerExitCode exitCode = SUCCESS;
+  AssemblingStatus lineStatus;
   Instruction instruction;
 };
-
-ParseResult ParseLine(const std::string &line, int lineNumber);
 
 class Assembler {
  private:
@@ -63,8 +63,9 @@ class Assembler {
 
   int locationCounter;
   int lineCounter;
+  AssemblingStatus assemblingStatus;
 
-  AssemblerExitCode finalExitCode;
+  // AssemblerExitCode finalExitCode;
 
   // caminho do programa de entrada
   std::string asmFilePath;
@@ -77,7 +78,6 @@ class Assembler {
   // código gerado | código fonte, ver formato na especificação
   std::vector<ListingLine> listingLines;
   // inserir erros de montagem aqui (não sei se precisa ser um vetor)
-  std::vector<ListingError> listingErrors;
   std::unordered_map<std::string, AssemblerIntDefData>
       intDefTable;        // tabela de simbolos definidos no modulo
   int16_t stackSize = 0;  // tamanho da pilha
@@ -88,14 +88,17 @@ class Assembler {
   std::unordered_map<std::string, AssemblerSymbolData> symbolTable;
   // tabela de literais
   std::unordered_map<std::string, AssemblerLiteralData> literalTable;
-  AssemblerExitCode FirstPass();
-  AssemblerExitCode SecondPass();
+
+  ParseResult ParseLine(const std::string &line, int lineNumber);
+  AssemblingStatus buildError(int16_t line, const std::string &token,
+                              AssemblerExitCode statusCode);
+  AssemblingStatus FirstPass();
+  AssemblingStatus SecondPass();
   void WriteObjectCodeFile();
   void WriteListingFile();
   void ResetAssembler();
-  AssemblerExitCode Assemble(const std::string &asmFilePath,
-                             const std::string &objFilePath,
-                             const std::string &lstFilePath);
+  void Assemble(const std::string &asmFilePath, const std::string &objFilePath,
+                const std::string &lstFilePath);
 
  public:
   Assembler();

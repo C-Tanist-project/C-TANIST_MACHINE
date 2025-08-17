@@ -3,6 +3,20 @@
 #include <regex>
 #include <string>
 
+std::unordered_map<AssemblerExitCode, std::string> errorMessages = {
+    {SUCCESS, "Sem erros"},
+    {INVALID_CHARACTER, "Lexema inválido"},
+    {LINE_OVER_80_CHARACTERS, "Linha muito longa (+80 caracteres)"},
+    {INVALID_DIGIT, "Dígito inválido para a base escolhida"},
+    {UNEXPECTED_EOL, "Fim de instrução inesperado"},
+    {OUT_OF_BOUNDS, "Valor fora do intervalo de int16_t"},
+    {SYNTAX_ERROR, "Erro de sintaxe"},
+    {SYMBOL_REDEFINITION, "Símbolo redefinido"},
+    {SYMBOL_UNDEFINED, "Símbolo indefinido"},
+    {INVALID_INSTRUCTION, "Instrução inválida"},
+    {NO_END, "Faltou END no programa"},
+};
+
 std::unordered_map<std::string, int16_t> opcodes = {
     {"ADD", 2},   {"BR", 0},    {"BRNEG", 5},   {"BRPOS", 1}, {"BRZERO", 4},
     {"CALL", 15}, {"COPY", 13}, {"DIVIDE", 10}, {"LOAD", 3},  {"MULT", 14},
@@ -11,36 +25,40 @@ std::unordered_map<std::string, int16_t> opcodes = {
 
 Assembler::Assembler() {}
 
-AssemblerExitCode Assembler::Assemble(const std::string &asmFilePath,
-                                      const std::string &objFilePath,
-                                      const std::string &lstFilePath) {
+void Assembler::Assemble(const std::string &asmFilePath,
+                         const std::string &objFilePath,
+                         const std::string &lstFilePath) {
   this->asmFilePath = asmFilePath;
   this->objFilePath = objFilePath;
   this->lstFilePath = lstFilePath;
 
   ResetAssembler();
-  this->finalExitCode = this->FirstPass();
-  if (this->finalExitCode != SUCCESS) return finalExitCode;
-  this->finalExitCode = this->SecondPass();
-  if (this->finalExitCode != SUCCESS) return finalExitCode;
+  this->assemblingStatus = FirstPass();
+  if (this->assemblingStatus.exitCode == SUCCESS) {
+    this->assemblingStatus = SecondPass();
+  }
   WriteObjectCodeFile();
   WriteListingFile();
-  return finalExitCode;
+  return;
 }
-AssemblerExitCode Assembler::FirstPass() {
+
+AssemblingStatus Assembler::FirstPass() {
+  AssemblingStatus status;
   locationCounter = 0;
   lineCounter = 0;
 
   bool foundStart = false;
+
   bool foundEnd = false;
 
   symbolTable.clear();
   literalTable.clear();
 
   std::ifstream in(asmFilePath);
-  if (!in) {
+  if (!in) {  // erro ao abrir arquivo pode entrar na lista de erros do
+              // assembler.
     std::cerr << "Error: Could not open file " << asmFilePath << std::endl;
-    return INVALID_CHARACTER;
+    return status;
   }
 
   std::string line;
@@ -50,8 +68,8 @@ AssemblerExitCode Assembler::FirstPass() {
     ParseResult parseResult =
         ParseLine(line, static_cast<int16_t>(lineCounter));
 
-    if (parseResult.exitCode != SUCCESS) {
-      return parseResult.exitCode;
+    if (parseResult.lineStatus.exitCode != SUCCESS) {
+      return parseResult.lineStatus;
     }
 
     Instruction &instruction = parseResult.instruction;
@@ -76,9 +94,8 @@ AssemblerExitCode Assembler::FirstPass() {
     // Tratando intDefTable e intUseTable
     if (mnemonic == "INTUSE") {
       if (instruction.label.empty()) {
-        std::cerr << "Error: INTUSE directive requires a label at line "
-                  << lineCounter << std::endl;
-        return SYNTAX_ERROR;
+        return buildError(lineCounter, mnemonic,
+                          SYNTAX_ERROR);  // INTUSE ERROR (ter que mudar)
       }
       intUseTable[instruction.label] = {};
       continue;
@@ -86,17 +103,14 @@ AssemblerExitCode Assembler::FirstPass() {
 
     if (mnemonic == "INTDEF") {
       if (instruction.operands.size() != 1) {
-        std::cerr << "Error: INTDEF directive requires one operand at line "
-                  << lineCounter << std::endl;
-        return SYNTAX_ERROR;
+        return buildError(lineCounter, instruction.operands[0],
+                          SYNTAX_ERROR);  // INTDEF ERROR (ter que mudar)
       }
 
       const std::string &symbol = instruction.operands[0];
       auto &defSymData = intDefTable[symbol];
       if (defSymData.defined) {
-        std::cerr << "Error: Symbol redefinition for " << symbol << " at line "
-                  << lineCounter << std::endl;
-        return SYMBOL_REDEFINITION;
+        return buildError(lineCounter, instruction.label, SYMBOL_REDEFINITION);
       }
       defSymData.defined =
           true;  // Simbolo definido na tabela de definições não significa que
@@ -110,9 +124,7 @@ AssemblerExitCode Assembler::FirstPass() {
     if (!instruction.label.empty()) {
       auto &symData = symbolTable[instruction.label];
       if (symData.defined) {
-        std::cerr << "Error: Symbol redefinition for " << instruction.label
-                  << " at line " << lineCounter << std::endl;
-        return SYMBOL_REDEFINITION;
+        return buildError(lineCounter, instruction.label, SYMBOL_REDEFINITION);
       }
       symData.address = static_cast<int16_t>(locationCounter);
       symData.defined = true;
@@ -123,25 +135,21 @@ AssemblerExitCode Assembler::FirstPass() {
     }
 
     if (!assemblerInstructions.count(mnemonic)) {
-      std::cerr << "Error: Invalid instruction " << mnemonic << " at line "
-                << lineCounter << std::endl;
-      return INVALID_INSTRUCTION;
+      return buildError(lineCounter, instruction.label, INVALID_INSTRUCTION);
     }
 
     // Tratando pseudo-instruções
     if (mnemonic == "START") {
       if (foundStart) {
-        std::cerr << "Error: Multiple START directives found at line "
-                  << lineCounter << std::endl;
-        return SYMBOL_REDEFINITION;
+        return buildError(
+            lineCounter, mnemonic,
+            SYMBOL_REDEFINITION);  // Erro de múltiplos START (ter que mudar)
       } else if (instruction.operands.size() != 1) {
-        std::cerr << "Error: START directive requires one operand at line "
-                  << lineCounter << std::endl;
-        return SYNTAX_ERROR;
+        return buildError(lineCounter, mnemonic,
+                          SYNTAX_ERROR);  // Falta operando no START
       } else if (foundEnd) {
-        std::cerr << "Error: START directive found after END at line "
-                  << lineCounter << std::endl;
-        return SYNTAX_ERROR;
+        return buildError(lineCounter, mnemonic,
+                          SYNTAX_ERROR);  // erro de start dps do end
       } else {
         foundStart = true;
         locationCounter = std::stoi(instruction.operands[0]);
@@ -153,42 +161,41 @@ AssemblerExitCode Assembler::FirstPass() {
 
     } else if (mnemonic == "CONST") {
       if (instruction.operands.size() != 1) {
-        std::cerr << "Error: " << mnemonic
-                  << " directive requires one operand at line " << lineCounter
-                  << std::endl;
-        return SYNTAX_ERROR;
+        return buildError(lineCounter, mnemonic,
+                          SYNTAX_ERROR);  // Const sem operando
       }
       locationCounter += 1;
 
     } else if (mnemonic == "SPACE") {
       if (instruction.operands.size() != 0) {
-        std::cerr << "Error: SPACE directive does not require operands at line "
-                  << lineCounter << std::endl;
-        return SYNTAX_ERROR;
+        return buildError(
+            lineCounter, mnemonic,
+            SYNTAX_ERROR);  // Space não precisa de operandos (precisa, para
+                            // definir mais de um espaço. Mas tô deixando aqui
+                            // só pra poder testar essa bomba)
       }
       locationCounter += 1;
 
     } else if (mnemonic == "STACK") {
       if (instruction.operands.size() != 1) {
-        std::cerr << "Error: STACK directive requires one operand at line "
-                  << lineCounter << std::endl;
-        return SYNTAX_ERROR;
+        return buildError(lineCounter, mnemonic,
+                          SYNTAX_ERROR);  // STACK sem operando
       }
       locationCounter += std::stoi(instruction.operands[0]);
 
     } else if (opcodes.contains(mnemonic)) {
       if (mnemonic == "COPY") {
         if (instruction.operands.size() != 2) {
-          std::cerr << "Error: COPY instruction requires two operands at line "
-                    << lineCounter << std::endl;
-          return SYNTAX_ERROR;
+          return buildError(lineCounter, mnemonic,
+                            SYNTAX_ERROR);  // Faltando operandos em COPY
         }
         locationCounter += 3;
       } else if (instruction.operands.size() != 1) {
-        std::cerr << "Error: " << mnemonic
-                  << " instruction requires one operand at line " << lineCounter
-                  << std::endl;
-        return SYNTAX_ERROR;
+        return buildError(
+            lineCounter, mnemonic,
+            SYNTAX_ERROR);  // Acho que isso tá considerando erro qualquer
+                            // instrução sem operandos, mas tbm vou deixar
+                            // aqui só pra testar.
       } else {
         locationCounter += 2;
       }
@@ -200,15 +207,13 @@ AssemblerExitCode Assembler::FirstPass() {
         const std::string digits = operand.substr(1);
         if (digits.empty() ||
             !std::all_of(digits.begin(), digits.end(), ::isdigit)) {
-          std::cerr
-              << "Error: Literal operand must be followed by a number at line "
-              << lineCounter << std::endl;
-          return SYNTAX_ERROR;
+          return buildError(lineCounter, operand,
+                            SYNTAX_ERROR);  // Literal sem número
         }
         auto &literalData = literalTable[operand];
         if (literalData.defined) {
-          std::cerr << "Error: Literal " << operand << " redefined at line "
-                    << lineCounter << std::endl;
+          return buildError(lineCounter, operand,
+                            SYMBOL_REDEFINITION);  // redefinição de literal
         }
       }
     }
@@ -227,22 +232,21 @@ AssemblerExitCode Assembler::FirstPass() {
   // Verifica se INTDEFs foram resolvidos
   for (const auto &[label, defData] : intDefTable) {
     if (defData.address == -1) {
-      std::cerr << "Error: INTDEF " << label << " not defined at line "
-                << defData.line << std::endl;
-      return SYMBOL_UNDEFINED;
+      return buildError(lineCounter, label,
+                        SYMBOL_UNDEFINED);  // INTDEF não definido (????????/)
     }
   }
 
   if (!foundEnd) {
     std::cerr << "Error: No END directive found in the program." << std::endl;
-    return NO_END;
+    return buildError(lineCounter, "", NO_END);
   }
-
-  return SUCCESS;
+  return status;
 }
 
-ParseResult ParseLine(const std::string &line, int lineNumber) {
+ParseResult Assembler::ParseLine(const std::string &line, int lineNumber) {
   ParseResult result;
+  result.lineStatus.exitCode = SUCCESS;
 
   if (line.empty() || line[0] == '*') {
     result.instruction.isComment = true;
@@ -250,9 +254,7 @@ ParseResult ParseLine(const std::string &line, int lineNumber) {
   }
 
   if (line.size() > 80) {
-    result.exitCode = LINE_OVER_80_CHARACTERS;
-    std::cerr << "Error: Line exceeds 80 characters at line " << lineNumber
-              << std::endl;
+    result.lineStatus = buildError(lineNumber, "", LINE_OVER_80_CHARACTERS);
     return result;
   }
 
@@ -264,62 +266,75 @@ ParseResult ParseLine(const std::string &line, int lineNumber) {
   };
 
   size_t idx = 0;
-
-  // Captura da label
-  if (!std::isspace(line[0])) {
-    size_t start = 0;
-    while (idx < line.size() && !std::isspace(line[idx])) {
-      ++idx;
-    }
-    std::string candidateLabel = line.substr(start, idx - start);
-
-    static const std::regex labelRegex(R"([A-Za-z_][A-Za-z0-9_]{0,7})");
-
-    if (!std::regex_match(candidateLabel, labelRegex)) {
-      result.exitCode = SYNTAX_ERROR;
-      std::cerr << "Error: Invalid label '" << candidateLabel << "' at line "
-                << lineNumber << std::endl;
-      return result;
-    }
-    result.instruction.label = candidateLabel;
-  }
-
-  // Captura do mnemonic
+  // Captura da primeira palavra (sem depender de indentação)
   skipSpaces(idx);
-  if (idx >= line.size()) {
-    result.exitCode = SYNTAX_ERROR;
-    std::cerr << "Error: Missing mnemonic at line " << lineNumber << std::endl;
-    return result;
-  }
-  size_t opStart = idx;
+  size_t start = idx;
   while (idx < line.size() && !std::isspace(line[idx])) {
     ++idx;
   }
-  result.instruction.mnemonic = line.substr(opStart, idx - opStart);
+  std::string firstWord = line.substr(start, idx - start);
+
+  if (assemblerInstructions.contains(firstWord)) {
+    // É um mnemonico -> não tem label
+    result.instruction.mnemonic = firstWord;
+  } else {
+    // Pode ser label
+    static const std::regex labelRegex(R"([A-Za-z_][A-Za-z0-9_]{0,7})");
+
+    if (!std::regex_match(firstWord, labelRegex)) {
+      result.lineStatus =
+          buildError(lineNumber, firstWord,
+                     SYNTAX_ERROR);  // Verificar se esse erro é esse erro mesmo
+      return result;
+    }
+    result.instruction.label = firstWord;
+
+    // Agora capturar o mnemonico
+    skipSpaces(idx);
+    if (idx >= line.size()) {
+      result.lineStatus =
+          buildError(lineNumber, firstWord,
+                     SYNTAX_ERROR);  // Verificar se esse erro é esse erro mesmo
+      return result;
+    }
+    size_t opStart = idx;
+    while (idx < line.size() && !std::isspace(line[idx])) {
+      ++idx;
+    }
+    result.instruction.mnemonic = line.substr(opStart, idx - opStart);
+  }
 
   // Captura dos operandos
   skipSpaces(idx);
   while (idx < line.size()) {
+    if (line[idx] == ';') {
+      // Encontrou início de comentário -> ignora resto da linha
+      break;
+    }
+
     size_t operandStart = idx;
-    while (idx < line.size() && !std::isspace(line[idx])) {
+    while (idx < line.size() && !std::isspace(line[idx]) && line[idx] != ';') {
       ++idx;
     }
+
     result.instruction.operands.emplace_back(
         line.substr(operandStart, idx - operandStart));
+
     skipSpaces(idx);
   }
 
   if (result.instruction.operands.size() > 2) {
-    result.exitCode = SYNTAX_ERROR;
-    std::cerr << "Error: Too many operands at line " << lineNumber << std::endl;
+    result.lineStatus =
+        buildError(lineNumber, firstWord,
+                   SYNTAX_ERROR);  // Verificar se esse erro é esse erro mesmo
     return result;
   }
 
   return result;
 }
 
-AssemblerExitCode Assembler::SecondPass() {
-  AssemblerExitCode exitCode = SUCCESS;
+AssemblingStatus Assembler::SecondPass() {
+  AssemblingStatus status;
   this->lineCounter = 0;
 
   std::string label, opcode, operand1, operand2;
@@ -331,7 +346,13 @@ AssemblerExitCode Assembler::SecondPass() {
     ++this->lineCounter;
 
     if (!(line.empty() || line[0] == '*')) {
-      std::istringstream lineStream(line);
+      std::string noCommentLine = line;
+      size_t commentPos = noCommentLine.find(';');
+      if (commentPos != std::string::npos) {
+        noCommentLine = noCommentLine.substr(0, commentPos);
+      }
+
+      std::istringstream lineStream(noCommentLine);
       std::string firstToken = [&]() -> std::string {
         std::streampos pos = lineStream.tellg();
         std::string first;
@@ -346,6 +367,7 @@ AssemblerExitCode Assembler::SecondPass() {
       opcode = "";
       operand1 = "";
       operand2 = "";
+
       if (!assemblerInstructions.contains(firstToken)) {
         lineStream >> label >> opcode >> operand1 >> operand2;
       } else {
@@ -372,7 +394,7 @@ AssemblerExitCode Assembler::SecondPass() {
             objectCode[opcodeIdx] = finalOpCode;
             operand.pop_back();
             if (!symbolTable.contains(operand)) {
-              exitCode = SYMBOL_UNDEFINED;
+              status = buildError(lineCounter, operand, SYMBOL_UNDEFINED);
               return;
             }
             objectCode.push_back(symbolTable[operand].address);
@@ -383,7 +405,9 @@ AssemblerExitCode Assembler::SecondPass() {
             // IMEDIATO
           } else if (operand[0] == '#') {
             if (opcode == "COPY" && whichOne == 32) {
-              exitCode = INVALID_CHARACTER;
+              status = buildError(
+                  lineCounter, operand,
+                  INVALID_CHARACTER);  // verificar se esse erro é o certo
               return;
             }
             finalOpCode += 128;
@@ -402,7 +426,7 @@ AssemblerExitCode Assembler::SecondPass() {
             if (!symbolTable.contains(operand) &&
                 !literalTable.contains(operand) &&
                 !intUseTable.contains(operand)) {
-              exitCode = SYMBOL_UNDEFINED;
+              status = buildError(lineCounter, operand, SYMBOL_UNDEFINED);
               return;
             }
             int16_t address;
@@ -425,7 +449,8 @@ AssemblerExitCode Assembler::SecondPass() {
         };
         if (!operand1.empty()) solveOperand(operand1, 32);
         if (!operand2.empty()) solveOperand(operand2, 64);
-        if (exitCode != SUCCESS) return exitCode;
+        if (status.exitCode != SUCCESS) return status;
+
         ListingLine listingLine;
         listingLine.address = opcodeIdx + 1;
         listingLine.generatedCode =
@@ -434,6 +459,7 @@ AssemblerExitCode Assembler::SecondPass() {
         listingLine.sourceCode = sourceCodeForLst;
 
         listingLines.push_back(listingLine);
+
       } else if (opcode == "STACK")
         stackSize = std::stoi(operand1);
       else if (opcode == "CONST")
@@ -451,7 +477,7 @@ AssemblerExitCode Assembler::SecondPass() {
     int16_t value = std::stoi(label.substr(1));
     objectCode.push_back(value);
   }
-  return exitCode;
+  return status;
 }
 
 // escreve o arquivo .obj com base no vetor this->objectCode
@@ -533,12 +559,11 @@ void Assembler::WriteListingFile() {
             << line.lineNumber << " - " << line.sourceCode << "\n";
   }
 
-  if (!this->listingErrors.empty()) {
+  if (this->assemblingStatus.exitCode != SUCCESS) {
     lstFile << "\nERROS DE COMPILAÇÃO\n";
-    for (const ListingError &err : this->listingErrors) {
-      lstFile << "Linha " << std::setw(3) << std::setfill('0') << err.lineNumber
-              << ": " << err.error << "\n";
-    }
+    lstFile << "Na linha " << assemblingStatus.lineNumber
+            << "\nErro: " << assemblingStatus.erro
+            << "\nPróximo ao token: " << assemblingStatus.badToken;
   } else {
     lstFile << "\nNENHUM ERRO DETECTADO\n";
   }
@@ -546,12 +571,23 @@ void Assembler::WriteListingFile() {
   lstFile.close();
 }
 
+AssemblingStatus Assembler::buildError(
+    int16_t line, const std::string &token,
+    AssemblerExitCode statusCode) {  // acredito que a função não precise estar
+                                     // na classe, apenas ser uma helper
+  AssemblingStatus status;
+  status.lineNumber = line;
+  status.badToken = token;
+  status.exitCode = statusCode;
+  status.erro = errorMessages.at(statusCode);
+  return status;
+}
+
 void Assembler::ResetAssembler() {
   locationCounter = 0;
   lineCounter = 0;
   objectCode.clear();
   listingLines.clear();
-  listingErrors.clear();
   intDefTable.clear();
   intUseTable.clear();
   stackSize = 0;
