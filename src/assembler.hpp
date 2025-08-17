@@ -57,7 +57,7 @@ class Assembler {
   static inline const std::unordered_set<std::string> assemblerInstructions = {
       // instruções de máquina
       "ADD", "BR", "BRNEG", "BRPOS", "BRZERO", "CALL", "COPY", "DIVIDE", "LOAD",
-      "MULT", "PUSH", "POP", "READ", "RET", "STOP", "SUB", "WRITE",
+      "MULT", "PUSH", "POP", "READ", "RET", "STOP", "SUB", "WRITE", "STORE",
       // pseudo-instruções
       "START", "END", "INTDEF", "INTUSE", "CONST", "SPACE", "STACK"};
 

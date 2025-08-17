@@ -21,7 +21,7 @@ std::unordered_map<std::string, int16_t> opcodes = {
     {"ADD", 2},   {"BR", 0},    {"BRNEG", 5},   {"BRPOS", 1}, {"BRZERO", 4},
     {"CALL", 15}, {"COPY", 13}, {"DIVIDE", 10}, {"LOAD", 3},  {"MULT", 14},
     {"PUSH", 17}, {"POP", 18},  {"READ", 12},   {"RET", 16},  {"STOP", 11},
-    {"SUB", 6},   {"WRITE", 8}};
+    {"SUB", 6},   {"WRITE", 8}, {"STORE", 7}};
 
 Assembler::Assembler() {}
 
@@ -80,14 +80,6 @@ AssemblingStatus Assembler::FirstPass() {
 
     // Tratando mnemonics
     std::string mnemonic = instruction.mnemonic;
-    // Ignorar prefixo '#' ou sufixo ',I' no mnemonic
-    if (!mnemonic.empty() && mnemonic[0] == '#') {
-      mnemonic = mnemonic.substr(1);
-    }
-    if (!mnemonic.empty() && mnemonic.size() > 2 &&
-        mnemonic.substr(mnemonic.size() - 2) == ",I") {
-      mnemonic = mnemonic.substr(0, mnemonic.size() - 2);
-    }
     std::transform(mnemonic.begin(), mnemonic.end(), mnemonic.begin(),
                    ::toupper);
 
@@ -152,7 +144,7 @@ AssemblingStatus Assembler::FirstPass() {
                           SYNTAX_ERROR);  // erro de start dps do end
       } else {
         foundStart = true;
-        locationCounter = std::stoi(instruction.operands[0]);
+        // locationCounter = std::stoi(instruction.operands[0]);
       }
 
     } else if (mnemonic == "END") {
@@ -181,7 +173,8 @@ AssemblingStatus Assembler::FirstPass() {
         return buildError(lineCounter, mnemonic,
                           SYNTAX_ERROR);  // STACK sem operando
       }
-      locationCounter += std::stoi(instruction.operands[0]);
+      // locationCounter += std::stoi(instruction.operands[0]); --Tava
+      // deslocando o locationCounter com base no tamanho da pilha
 
     } else if (opcodes.contains(mnemonic)) {
       if (mnemonic == "COPY") {
@@ -190,19 +183,36 @@ AssemblingStatus Assembler::FirstPass() {
                             SYNTAX_ERROR);  // Faltando operandos em COPY
         }
         locationCounter += 3;
-      } else if (instruction.operands.size() != 1) {
-        return buildError(
-            lineCounter, mnemonic,
-            SYNTAX_ERROR);  // Acho que isso tá considerando erro qualquer
-                            // instrução sem operandos, mas tbm vou deixar
-                            // aqui só pra testar.
+      } else if (mnemonic == "RET" || mnemonic == "STOP") {
+        if (instruction.operands.size() > 0) {
+          return buildError(lineCounter, mnemonic,
+                            SYNTAX_ERROR);  // Muitos operandos em RET ou STOP
+        }
+        locationCounter += 1;
       } else {
+        if (instruction.operands.size() != 1) {
+          return buildError(lineCounter, mnemonic,
+                            SYNTAX_ERROR);  // Agora sim isso tá certo
+        }
         locationCounter += 2;
       }
     }
 
     // Tratando operandos
     for (auto &operand : instruction.operands) {
+      if (operand.empty()) continue;
+
+      // 🔹 Remover prefixo '#' (endereçamento imediato)
+      if (operand[0] == '#') {
+        operand = operand.substr(1);
+      }
+
+      // 🔹 Remover sufixo ',I' (endereçamento indireto)
+      if (operand.size() > 2 && operand.substr(operand.size() - 2) == "I") {
+        operand = operand.substr(0, operand.size() - 2);
+      }
+
+      // 🔹 Verificar literais iniciados com '@'
       if (!operand.empty() && operand[0] == '@') {
         const std::string digits = operand.substr(1);
         if (digits.empty() ||
@@ -210,6 +220,7 @@ AssemblingStatus Assembler::FirstPass() {
           return buildError(lineCounter, operand,
                             SYNTAX_ERROR);  // Literal sem número
         }
+
         auto &literalData = literalTable[operand];
         if (literalData.defined) {
           return buildError(lineCounter, operand,
@@ -282,9 +293,9 @@ ParseResult Assembler::ParseLine(const std::string &line, int lineNumber) {
     static const std::regex labelRegex(R"([A-Za-z_][A-Za-z0-9_]{0,7})");
 
     if (!std::regex_match(firstWord, labelRegex)) {
-      result.lineStatus =
-          buildError(lineNumber, firstWord,
-                     SYNTAX_ERROR);  // Verificar se esse erro é esse erro mesmo
+      result.lineStatus = buildError(
+          lineNumber, firstWord,
+          LINE_OVER_80_CHARACTERS);  // Verificar se esse erro é esse erro mesmo
       return result;
     }
     result.instruction.label = firstWord;
@@ -292,9 +303,9 @@ ParseResult Assembler::ParseLine(const std::string &line, int lineNumber) {
     // Agora capturar o mnemonico
     skipSpaces(idx);
     if (idx >= line.size()) {
-      result.lineStatus =
-          buildError(lineNumber, firstWord,
-                     SYNTAX_ERROR);  // Verificar se esse erro é esse erro mesmo
+      result.lineStatus = buildError(
+          lineNumber, firstWord,
+          LINE_OVER_80_CHARACTERS);  // Verificar se esse erro é esse erro mesmo
       return result;
     }
     size_t opStart = idx;
@@ -324,9 +335,9 @@ ParseResult Assembler::ParseLine(const std::string &line, int lineNumber) {
   }
 
   if (result.instruction.operands.size() > 2) {
-    result.lineStatus =
-        buildError(lineNumber, firstWord,
-                   SYNTAX_ERROR);  // Verificar se esse erro é esse erro mesmo
+    result.lineStatus = buildError(
+        lineNumber, firstWord,
+        LINE_OVER_80_CHARACTERS);  // Verificar se esse erro é esse erro mesmo
     return result;
   }
 
