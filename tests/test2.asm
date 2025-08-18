@@ -1,5 +1,5 @@
- intdef Edegar
- intdef Gloria
+ intdef Jorge
+ intdef Ines
 Vera intuse
 Ibanes intuse
 Bento COPY Catarina Dorival
@@ -11,12 +11,12 @@ Bento COPY Catarina Dorival
  LOAD @3
  SUB Vera
  CALL Ibanes
- LOAD Edegar
+ LOAD Jorge
 Felipe CONST 3
 Estela CONST 0
 Gustavo CONST 5
 Catarina CONST 2
 Dorival CONST 4
-Edegar SPACE
-Gloria SPACE
+Jorge SPACE
+Ines SPACE
  End

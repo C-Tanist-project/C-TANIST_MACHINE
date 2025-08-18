@@ -35,9 +35,37 @@ void Linker::FirstPass(const std::vector<std::string> &objFilePaths) {
       errors.push_back("Símbolo global não resolvido: " + name);
     }
   }
-  // Relocar os endereços na intUseTable de cada módulo
-  // Relocar os endereços no vetor do código binário de cada módulo
-  // Relocar endereços da relocTable também
+
+  for(auto &mod : modules) {
+    for(auto &intuse : mod.intUseTable) {
+      auto &positions = intuse.second;
+      for(auto &pos : positions) {
+        pos += mod.loadAddress;
+      }
+    }
+
+    std::unordered_map<int16_t, OperandFormat> newRelocationTable;
+    for (const auto &rel : mod.relocationTable) {
+      const int16_t locaIndex = rel.first;
+      const OperandFormat &format = rel.second;
+
+      switch (format) {
+        case IMMEDIATE:
+          break;
+        case DIRECT:
+        case INDIRECT:
+          mod.code[locaIndex] += mod.loadAddress;
+          break;
+        default:
+          errors.push_back("Tipo de relocação desconhecido: " + std::to_string(static_cast<int>(format)));
+          break;
+      }
+
+      const int16_t globalIndex = locaIndex + mod.loadAddress;
+      newRelocationTable[globalIndex] = format;
+    }
+    mod.relocationTable = std::move(newRelocationTable);
+  }
 }
 
 // escreve o arquivo .obj com base no vetor this->objectCode
@@ -86,7 +114,7 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
 
           int16_t relocatedAddr = address + module.loadAddress;
 
-          if (globalSymbolTable.count(label)) {
+          if (globalSymbolTable.count(label) && globalSymbolTable[label].first != UNRESOLVED_ADDRESS) {
             errors.push_back("Símbolo global já definido: " + label + " [" +
                              filePath + "/" + globalSymbolTable[label].second +
                              "]");
@@ -112,7 +140,7 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
           int16_t addrCount;
           objFile.read(reinterpret_cast<char *>(&addrCount), sizeof(int16_t));
 
-          std::vector<int> addresses(addrCount);
+          std::vector<int16_t> addresses(addrCount);
           for (int j = 0; j < addrCount; ++j) {
             int16_t addr;
             objFile.read(reinterpret_cast<char *>(&addr), sizeof(int16_t));
@@ -121,7 +149,7 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
 
           module.intUseTable[label] = std::move(addresses);
 
-          if (globalSymbolTable.contains(label)) {
+          if (!globalSymbolTable.contains(label)) {
             globalSymbolTable[label] = {UNRESOLVED_ADDRESS, filePath};
           }
         }

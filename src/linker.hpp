@@ -11,7 +11,7 @@ class Linker {
     std::string name;
     std::vector<int16_t> code;
     std::unordered_map<std::string, int16_t> intDefTable;
-    std::unordered_map<std::string, std::vector<int>> intUseTable;
+    std::unordered_map<std::string, std::vector<int16_t>> intUseTable;
     std::unordered_map<int16_t, OperandFormat> relocationTable;
     int16_t stackSize = 0;
     int16_t startAddress = 0;
