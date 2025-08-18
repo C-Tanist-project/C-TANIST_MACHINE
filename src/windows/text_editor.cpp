@@ -1090,7 +1090,7 @@ void RemoveTab(int index) {
   if (tabs.empty()) currentTab = -1;
 }
 
-void RenderTextEditor(bool& window) {
+void RenderTextEditor(VMState& vm, bool& window) {
   static bool openDialog = false;
   if (!window) return;
 
@@ -1136,7 +1136,7 @@ void RenderTextEditor(bool& window) {
     ImGui::OpenPopup("popup_opcoes_executar");
   }
 
-  if (ImGui::BeginPopupModal("Erro: Pré-processador", NULL,
+  if (ImGui::BeginPopupModal("Erro: Pre-processador", NULL,
                              ImGuiWindowFlags_AlwaysAutoResize)) {
     ImGui::Text("Por favor, selecione apenas 1 arquivo.");
     ImGui::Separator();
@@ -1203,7 +1203,10 @@ void RenderTextEditor(bool& window) {
         if (openFilePaths.size() != 1) {
           ImGui::OpenPopup("Erro: Pre-processador");
         } else {
-          std::cout << "Executando Pre-processador...\n";
+          std::stringstream buffer;
+          buffer << "Executando Pre-processador...\n";
+          std::lock_guard<std::mutex> lock(vm.consoleMutex);
+          vm.consoleMessages.push(buffer.str());
           std::string inputFile = openFilePaths[0];
           MacroProcessor Ppc(inputFile);
           Ppc.Pass();
@@ -1215,7 +1218,10 @@ void RenderTextEditor(bool& window) {
         if (openFilePaths.empty()) {
           ImGui::OpenPopup("Erro: Assembler");
         } else {
-          std::cout << "Executando Assembler...\n";
+          std::stringstream buffer;
+          buffer << "Executando até o Assembler...\n";
+          std::lock_guard<std::mutex> lock(vm.consoleMutex);
+          vm.consoleMessages.push(buffer.str());
           Asm.CallAssembler(openFilePaths);
           //->Console .lst
         }
@@ -1225,7 +1231,10 @@ void RenderTextEditor(bool& window) {
         if (openFilePaths.size() < 2) {
           ImGui::OpenPopup("Erro: Linker");
         } else {
-          std::cout << "Executando Assembler e Linker...\n";
+          std::stringstream buffer;
+          buffer << "Executando até o Linker...\n";
+          std::lock_guard<std::mutex> lock(vm.consoleMutex);
+          vm.consoleMessages.push(buffer.str());
           Asm.CallAssembler(openFilePaths);
           // Lnk.Link(openFilePaths);
         }

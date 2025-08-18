@@ -37,7 +37,7 @@ void RenderMainWindow(GLFWwindow *window, VMState &vm);
 void RenderControlsWindow(bool &window, VMState &vm);
 void RenderVMState(VMState &vm, bool &window);
 void RenderConsoleWindow(VMState &vm, bool &window);
-void RenderTextEditor(bool &window);
+void RenderTextEditor(VMState &vm, bool &window);
 void WindowCleanup(GLFWwindow *window);
 void SkipToEnd(VMState &vm);
 void SetupCtanistStyle();

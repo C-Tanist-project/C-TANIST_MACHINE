@@ -37,7 +37,7 @@ void RenderMainWindow(GLFWwindow *window, VMState &vm) {
 
   RenderConsoleWindow(vm, showConsoleWindow);
 
-  RenderTextEditor(showTextWindow);
+  RenderTextEditor(vm, showTextWindow);
 
   ImGui::Render();
 
