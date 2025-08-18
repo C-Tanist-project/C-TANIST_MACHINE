@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "preprocessor.hpp"
 #include "types.hpp"
 
 struct ListingLine {

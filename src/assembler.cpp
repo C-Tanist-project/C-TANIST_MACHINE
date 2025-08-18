@@ -3,6 +3,8 @@
 #include <regex>
 #include <string>
 
+std::unordered_map<std::string, Registers> regs = {
+    {"ACC", ACC}, {"R0", R0}, {"R1", R1}};
 std::unordered_map<AssemblerExitCode, std::string> errorMessages = {
     {SUCCESS, "Sem erros"},
     {INVALID_CHARACTER, "Lexema inválido"},
@@ -399,8 +401,18 @@ AssemblingStatus Assembler::SecondPass() {
           sourceCodeForLst += " ";
           sourceCodeForLst += operand;
 
+          if (opcode == "PUSH" || opcode == "POP") {
+            if (!regs.contains(operand)) {
+              status = buildError(lineCounter, operand,
+                                  SYNTAX_ERROR);  // erro de operando inválido
+              return;
+            }
+            objectCode.push_back(regs.at(operand));
+            generatedCodeForLst += " ";
+            generatedCodeForLst += operand;
+          }
           // INDIRETO
-          if (operand.back() == 'I') {
+          else if (operand.back() == 'I') {
             finalOpCode += whichOne;
             objectCode[opcodeIdx] = finalOpCode;
             operand.pop_back();
@@ -608,10 +620,12 @@ void Assembler::ResetAssembler() {
 
 void Assembler::CallAssembler(std::vector<std::string> paths) {
   for (const auto &path : paths) {
+    MacroProcessor macross(path);
+    macross.Pass();
     size_t lastSlash = path.rfind('/');
     std::string fileName =
         path.substr(lastSlash + 1, path.find_last_of('.') - (lastSlash + 1));
-    std::string asmFilePath = path;
+    std::string asmFilePath = "./MASMAPRG.ASM";
     std::string objFilePath = "./obj/" + fileName + ".obj";
     std::string lstFilePath = "./lst/" + fileName + ".lst";
 
