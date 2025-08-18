@@ -5,6 +5,8 @@
 #include <string>
 
 #include "src/assembler.hpp"
+#include "src/linker.hpp"
+#include "src/preprocessor.hpp"
 #include "src/ui.hpp"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -1057,7 +1059,7 @@ struct Tab {
 };
 
 static std::vector<Tab> tabs;
-static std::vector<std::filesystem::path> openFilePaths;
+static std::vector<std::string> openFilePaths;
 static int currentTab = -1;
 
 void AddTab(const std::filesystem::path& path, const std::string& content) {
@@ -1076,7 +1078,7 @@ void AddTab(const std::filesystem::path& path, const std::string& content) {
   newTab.editor.SetLanguageDefinition(def);
 
   tabs.push_back(std::move(newTab));
-  openFilePaths.push_back(path);
+  openFilePaths.push_back(path.string());
   currentTab = (int)tabs.size() - 1;
 }
 
@@ -1090,8 +1092,11 @@ void RemoveTab(int index) {
 
 void RenderTextEditor(bool& window) {
   static bool openDialog = false;
-
   if (!window) return;
+
+  static Assembler Asm;
+  static Linker Lnk;
+  static int opcao = 0;
 
   ImVec2 fixedSize(800, 600);
   ImGui::SetNextWindowSize(fixedSize, ImGuiCond_FirstUseEver);
@@ -1128,7 +1133,120 @@ void RenderTextEditor(bool& window) {
 
   ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 220);
   if (ImGui::Button("Executar", ImVec2(65, 30))) {
+    ImGui::OpenPopup("popup_opcoes_executar");
   }
+
+  if (ImGui::BeginPopupModal("Erro: Pré-processador", NULL,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::Text("Por favor, selecione apenas 1 arquivo.");
+    ImGui::Separator();
+    if (ImGui::Button("OK", ImVec2(120, 0))) {
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+  }
+
+  if (ImGui::BeginPopupModal("Erro: Assembler", NULL,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::Text("Por favor, selecione pelo menos 1 arquivo.");
+    ImGui::Separator();
+    if (ImGui::Button("OK", ImVec2(120, 0))) {
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+  }
+
+  if (ImGui::BeginPopupModal("Erro: Linker", NULL,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::Text("Por favor, selecione pelo menos 2 arquivos.");
+    ImGui::Separator();
+    if (ImGui::Button("OK", ImVec2(120, 0))) {
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+  }
+
+  if (ImGui::BeginPopup("popup_opcoes_executar")) {
+    ImGui::Text("Escolha até qual etapa executar:");
+    ImGui::Separator();
+
+    if (ImGui::Selectable("1 - Preprocessor")) {
+      opcao = 1;
+    }
+    if (ImGui::Selectable("2 - Assembler")) {
+      opcao = 2;
+    }
+    if (ImGui::Selectable("3 - Linker")) {
+      opcao = 3;
+    }
+    if (ImGui::Selectable("4 - Loader")) {
+      opcao = 4;
+    }
+    if (ImGui::Selectable("5 - Completo")) {
+      opcao = 5;
+    }
+    ImGui::Separator();
+
+    if (ImGui::Selectable("Cancelar")) {
+      opcao = 0;
+    }
+
+    if (opcao != 0) {
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+  }
+
+  if (opcao != 0) {
+    switch (opcao) {
+      case 1:  // Preprocessor
+        if (openFilePaths.size() != 1) {
+          ImGui::OpenPopup("Erro: Pre-processador");
+        } else {
+          std::cout << "Executando Pre-processador...\n";
+          std::string inputFile = openFilePaths[0];
+          MacroProcessor Ppc(inputFile);
+          Ppc.Pass();
+          // carregar aba masmprg.asm
+        }
+        break;
+
+      case 2:  // Assembler
+        if (openFilePaths.empty()) {
+          ImGui::OpenPopup("Erro: Assembler");
+        } else {
+          std::cout << "Executando Assembler...\n";
+          Asm.CallAssembler(openFilePaths);
+          //->Console .lst
+        }
+        break;
+
+      case 3:  // Linker
+        if (openFilePaths.size() < 2) {
+          ImGui::OpenPopup("Erro: Linker");
+        } else {
+          std::cout << "Executando Assembler e Linker...\n";
+          Asm.CallAssembler(openFilePaths);
+          // Lnk.Link(openFilePaths);
+        }
+        break;
+
+      case 4:  // Loader
+        Asm.CallAssembler(openFilePaths);
+        // Lnk.Link(openFilePaths);
+        // loader
+        break;
+
+      case 5:  // Completo
+        Asm.CallAssembler(openFilePaths);
+        // Lnk.Link(openFilePaths);
+        // loader
+        break;
+    }
+
+    opcao = 0;
+  }
+
   ImGui::SameLine();
   if (ImGui::Button("Carregar", ImVec2(65, 30))) {
     openDialog = true;
