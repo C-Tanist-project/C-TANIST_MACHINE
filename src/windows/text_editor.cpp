@@ -1138,10 +1138,18 @@ void RenderTextEditor(VMState& vm, bool& window) {
 
   if (ImGui::BeginPopupModal("Erro: Pre-processador", NULL,
                              ImGuiWindowFlags_AlwaysAutoResize)) {
-    ImGui::Text("Por favor, selecione apenas 1 arquivo.");
-    ImGui::Separator();
-    if (ImGui::Button("OK", ImVec2(120, 0))) {
-      ImGui::CloseCurrentPopup();
+    if (openFilePaths.empty()) {
+      ImGui::Text("Por favor, selecione 1 arquivo.");
+      ImGui::Separator();
+      if (ImGui::Button("OK", ImVec2(120, 0))) {
+        ImGui::CloseCurrentPopup();
+      }
+    } else {
+      ImGui::Text("Por favor, selecione apenas 1 arquivo.");
+      ImGui::Separator();
+      if (ImGui::Button("OK", ImVec2(120, 0))) {
+        ImGui::CloseCurrentPopup();
+      }
     }
     ImGui::EndPopup();
   }
