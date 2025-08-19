@@ -28,7 +28,6 @@ int main(int argc, char *argv[]) {
   objPaths.push_back("./obj/test.obj");
   objPaths.push_back("./obj/test2.obj");
   linker->FirstPass(objPaths);
-  linker->printModules();
 
   std::thread engineThread(&VMEngine::Run, &engine, std::ref(vm));
 
