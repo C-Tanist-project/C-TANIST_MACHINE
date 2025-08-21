@@ -1,22 +1,21 @@
- intdef Ibanes
- intdef Vera
-Ines intuse
-Jorge intuse
-Bento COPY Catarina Dorival
+ intdef Alves
+ intdef Bernardo
+Quadrado intuse
+Helida intuse
+ STACK 6
+ ADD Caio
+Caio SUB #10
+ ADD @3
+ COPY Quadrado Dorival
+ ADD Helida
+ SUB Quadrado
  BR Estela
- LOAD Felipe
- LOAD Gustavo
- ADD @6
- DIVIDE @3
- LOAD @3
- SUB Ines
- CALL Jorge
- LOAD Ibanes
-Felipe CONST 3
-Estela CONST 0
-Gustavo CONST 5
-Catarina CONST 2
-Dorival CONST 4
-Ibanes SPACE
-Vera SPACE
+ BR Felipe,I
+ DIVIDE Gustavo
+Alves SPACE
+Bernardo CONST 5
+Dorival SPACE
+Estela CONST 1
+Felipe SPACE
+Gustavo SPACE
  End

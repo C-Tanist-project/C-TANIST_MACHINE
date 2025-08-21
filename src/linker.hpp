@@ -23,8 +23,10 @@ class Linker {
   std::unordered_map<std::string, std::pair<int16_t, std::string>>
       globalSymbolTable;
   std::vector<std::string> errors;
-  int16_t totalStackSize = 0;
+  int16_t globalStackSize = 0;
   int16_t currentLoadAddress = 0;
+  std::vector<int16_t> linkedCode;
+  std::unordered_map<int16_t, OperandFormat> globalRelocationTable;
 
   void SecondPass();
   void GenerateOutput(const std::string& outputName);

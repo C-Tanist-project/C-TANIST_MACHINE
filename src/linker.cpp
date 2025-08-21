@@ -7,65 +7,128 @@
 #include <unordered_map>
 #include <vector>
 
-Linker::Linker() {}
+Linker::Linker(){}
+
+void Linker::Link(const std::vector<std::string>& objFilePaths) {
+  FirstPass(objFilePaths);
+  SecondPass();
+}
 
 void Linker::GenerateOutput(const std::string &outputName) {
   // criar o .hpx contendo código binário + tabela de relocação global
 }
 void Linker::SecondPass() {
 
-  // Concatenar os módulos
-  // Resolver os símbolos da intUseTable
-  // criar tabela de relocação global
+  linkedCode.clear();
+  globalRelocationTable.clear();
 
+  for (auto &mod : modules) {
+    for (const auto &intuse : mod.intUseTable) {
+      const std::string &symbol = intuse.first;
+      const auto it = globalSymbolTable.find(symbol);
+      if (it == globalSymbolTable.end() || it->second.first == UNRESOLVED_ADDRESS){
+        continue;
+      } 
+
+      const int16_t &address = it->second.first;
+
+      for (auto &globalPos : intuse.second) {
+        int16_t localPos = globalPos - mod.loadAddress;
+
+        if (localPos < 0 || localPos >= static_cast<int16_t>(mod.code.size())) {
+          errors.push_back("Endereço fora dos limites do módulo: " + mod.name +
+                           " para o símbolo " + symbol);
+          continue;
+        }
+
+        mod.code[static_cast<size_t>(localPos)] = address;
+      }
+    }
+  }
+
+  linkedCode.assign(static_cast<size_t>(currentLoadAddress), 0);
+  for (const auto &mod : modules) {
+    const size_t start = static_cast<size_t>(mod.loadAddress);
+    if (start + mod.code.size() > linkedCode.size()) {
+      errors.push_back("Módulo " + mod.name +
+                           " excede o tamanho do código.");
+      continue;
+    }
+    std::copy(mod.code.begin(), mod.code.end(), linkedCode.begin() + start);
+  }
+
+  for (const auto &mod : modules) {
+    for (const auto &reloc : mod.relocationTable) {
+      globalRelocationTable[reloc.first] = reloc.second;
+    }
+    for (const auto &intuse : mod.intUseTable) {
+      for (auto globalPos : intuse.second) {
+        const int16_t key = static_cast<int16_t>(globalPos);
+        if (!globalRelocationTable.contains(key)){
+          globalRelocationTable[key] = DIRECT;
+        }
+      }
+    }
+  }
 };
+
 void Linker::FirstPass(const std::vector<std::string> &objFilePaths) {
   modules.clear();
   globalSymbolTable.clear();
   errors.clear();
-  totalStackSize = 0;
+  globalStackSize = 0;
   currentLoadAddress = 0;
 
   for (const auto &filePath : objFilePaths) {
     ReadObjectCodeFile(filePath);
   }
 
-  for (const auto &[name, symbol] : globalSymbolTable) {
-    if (symbol.first == UNRESOLVED_ADDRESS) {
-      errors.push_back("Símbolo global não resolvido: " + name);
-    }
-  }
-
-  for(auto &mod : modules) {
-    for(auto &intuse : mod.intUseTable) {
-      auto &positions = intuse.second;
-      for(auto &pos : positions) {
-        pos += mod.loadAddress;
+  for (auto &mod : modules) {
+    for (const auto &[symbol, address] : mod.intDefTable) {
+      int16_t relocatedAddr = address + mod.loadAddress;
+      if (globalSymbolTable.contains(symbol)) {
+        errors.push_back("Símbolo " + symbol + " já definido globalmente.");
+      } else {
+        globalSymbolTable[symbol] = {relocatedAddr, mod.name};
       }
     }
-
+    for(auto &[symbol, positions] : mod.intUseTable) {
+      if (!globalSymbolTable.contains(symbol)) {
+        errors.push_back("Símbolo " + symbol + " não definido globalmente.");
+      }else {
+        for(auto &pos : positions) {
+          pos += mod.loadAddress;
+        }
+      }
+    }
+  
     std::unordered_map<int16_t, OperandFormat> newRelocationTable;
-    for (const auto &rel : mod.relocationTable) {
-      const int16_t locaIndex = rel.first;
-      const OperandFormat &format = rel.second;
+    newRelocationTable.reserve(mod.relocationTable.size());
 
+    for (const auto &reloc : mod.relocationTable) {
+      const int16_t localIndex = reloc.first;
+      const OperandFormat format = reloc.second;
+  
       switch (format) {
         case IMMEDIATE:
           break;
         case DIRECT:
         case INDIRECT:
-          mod.code[locaIndex] += mod.loadAddress;
+          mod.code[localIndex] += mod.loadAddress;
           break;
         default:
           errors.push_back("Tipo de relocação desconhecido: " + std::to_string(static_cast<int>(format)));
           break;
       }
-
-      const int16_t globalIndex = locaIndex + mod.loadAddress;
+  
+      const int16_t globalIndex = localIndex + mod.loadAddress;
       newRelocationTable[globalIndex] = format;
     }
     mod.relocationTable = std::move(newRelocationTable);
   }
+
+  
+  
 }
 
 // escreve o arquivo .obj com base no vetor this->objectCode
@@ -94,7 +157,7 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
       case ObjSectionType::STACK_SIZE: {
         objFile.read(reinterpret_cast<char *>(&module.stackSize),
                      sizeof(int16_t));
-        totalStackSize += module.stackSize;
+        globalStackSize += module.stackSize;
         break;
       }
 
@@ -112,16 +175,7 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
           int16_t address;
           objFile.read(reinterpret_cast<char *>(&address), sizeof(int16_t));
 
-          int16_t relocatedAddr = address + module.loadAddress;
-
-          if (globalSymbolTable.count(label) && globalSymbolTable[label].first != UNRESOLVED_ADDRESS) {
-            errors.push_back("Símbolo global já definido: " + label + " [" +
-                             filePath + "/" + globalSymbolTable[label].second +
-                             "]");
-          } else {
-            globalSymbolTable[label] = {relocatedAddr, filePath};
-            module.intDefTable[label] = relocatedAddr;
-          }
+          module.intDefTable[label] = address;
         }
         break;
       }
@@ -146,12 +200,7 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
             objFile.read(reinterpret_cast<char *>(&addr), sizeof(int16_t));
             addresses[j] = addr;
           }
-
           module.intUseTable[label] = std::move(addresses);
-
-          if (!globalSymbolTable.contains(label)) {
-            globalSymbolTable[label] = {UNRESOLVED_ADDRESS, filePath};
-          }
         }
         break;
       }
@@ -224,19 +273,31 @@ void Linker::printModules() {
     }
 
     std::cout << "Relocation Table:\n";
-    for (const auto &relocIndex : mod.relocationTable) {
-      std::cout << "  Relocate address index: " << relocIndex.first << "\n";
-    }
-
-    std::cout << "Global Symbol Table:\n";
-    for (const auto &[symbol, where] : globalSymbolTable) {
-      std::cout << "Símbolo: " << symbol << " " << "Endereço: " << where.first
-                << " "
-                << "Módulo: " << where.second << std::endl;
+    for (const auto &[address, type] : mod.relocationTable) {
+      std::cout << "  Address: " << address << ", Type: " << static_cast<int>(type) << "\n";
     }
     std::cout << "Stack Size: " << mod.stackSize << "\n";
     std::cout << "Start Address: " << mod.startAddress << "\n";
     std::cout << "Load Address: " << mod.loadAddress << "\n";
     std::cout << "\n";
+  }
+  std::cout << "Global Symbol Table:\n";
+  for (const auto &[symbol, where] : globalSymbolTable) {
+    std::cout << "Símbolo: " << symbol << " " << "Endereço: " << where.first
+              << " "
+              << "Módulo: " << where.second << std::endl;
+  }
+
+  std::cout << "Global Stack Size: " << globalStackSize << "\n";
+
+  std::cout << "Linked Code: ";
+  for (const auto &val : linkedCode) {
+    std::cout << val << " ";
+  }
+  std::cout << "\n";
+
+  std::cout << "Global Relocation Table:\n";
+  for (const auto &[address, type] : globalRelocationTable) {
+    std::cout << "  Address: " << address << ", Type: " << static_cast<int>(type) << "\n";
   }
 }
