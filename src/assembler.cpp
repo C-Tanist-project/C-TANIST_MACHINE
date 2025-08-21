@@ -20,9 +20,11 @@ AssemblerExitCode Assembler::Assemble(const std::string &asmFilePath,
 
   ResetAssembler();
   this->finalExitCode = this->FirstPass();
-  if (this->finalExitCode != SUCCESS) return finalExitCode;
+  if (this->finalExitCode != SUCCESS)
+    return finalExitCode;
   this->finalExitCode = this->SecondPass();
-  if (this->finalExitCode != SUCCESS) return finalExitCode;
+  if (this->finalExitCode != SUCCESS)
+    return finalExitCode;
   WriteObjectCodeFile();
   WriteListingFile();
   return finalExitCode;
@@ -99,8 +101,8 @@ AssemblerExitCode Assembler::FirstPass() {
         return SYMBOL_REDEFINITION;
       }
       defSymData.defined =
-          true;  // Simbolo definido na tabela de definições não significa que
-                 // foi definido na tabela de símbolos
+          true; // Simbolo definido na tabela de definições não significa que
+                // foi definido na tabela de símbolos
       defSymData.address = UNRESOLVED_ADDRESS;
       defSymData.line = lineCounter;
       continue;
@@ -409,17 +411,17 @@ AssemblerExitCode Assembler::SecondPass() {
             }
             int16_t address;
             std::string addressToLst;
-            if (operand[0] == '@') {  // literal
+            if (operand[0] == '@') { // literal
               address = literalTable[operand].address;
               addressToLst = std::to_string(literalTable[operand].address);
               relocationTable.emplace(static_cast<int16_t>(objectCode.size()),
                                       OperandFormat::DIRECT);
-            } else if (symbolTable.contains(operand)) {  // símbolo local
+            } else if (symbolTable.contains(operand)) { // símbolo local
               address = symbolTable[operand].address;
               addressToLst = std::to_string(symbolTable[operand].address);
               relocationTable.emplace(static_cast<int16_t>(objectCode.size()),
                                       OperandFormat::DIRECT);
-            } else {  // símbolo definido em outro módulo
+            } else { // símbolo definido em outro módulo
               address = 0;
               addressToLst = "0";
               intUseTable[operand].push_back(objectCode.size());
@@ -429,9 +431,12 @@ AssemblerExitCode Assembler::SecondPass() {
             generatedCodeForLst += addressToLst;
           }
         };
-        if (!operand1.empty()) solveOperand(operand1, 32);
-        if (!operand2.empty()) solveOperand(operand2, 64);
-        if (exitCode != SUCCESS) return exitCode;
+        if (!operand1.empty())
+          solveOperand(operand1, 32);
+        if (!operand2.empty())
+          solveOperand(operand2, 64);
+        if (exitCode != SUCCESS)
+          return exitCode;
         ListingLine listingLine;
         listingLine.address = opcodeIdx + 1;
         listingLine.generatedCode =
@@ -445,7 +450,8 @@ AssemblerExitCode Assembler::SecondPass() {
       else if (opcode == "CONST")
         objectCode.push_back(static_cast<int16_t>(std::stoi(operand1)));
       else if (opcode == "SPACE") {
-        if (operand1 == "") operand1 = "1";
+        if (operand1 == "")
+          operand1 = "1";
         objectCode.insert(objectCode.end(), std::stoi(operand1), 0);
       } else
         continue;
@@ -466,7 +472,6 @@ void Assembler::WriteObjectCodeFile() {
   if (!objFile) {
     std::cerr << "Erro ao abrir o arquivo de código objeto: "
               << this->objFilePath << std::endl;
-    return;
   }
 
   // STACK_SIZE
@@ -526,7 +531,7 @@ void Assembler::WriteObjectCodeFile() {
 
   for (const auto &[address, type] : this->relocationTable) {
     objFile.write(reinterpret_cast<const char *>(&address), sizeof(int16_t));
-    int16_t typeVal = static_cast<int16_t>(type);  // DIRECT ou INDIRECT
+    int16_t typeVal = static_cast<int16_t>(type); // DIRECT ou INDIRECT
     objFile.write(reinterpret_cast<const char *>(&typeVal), sizeof(int16_t));
   }
 
@@ -538,11 +543,12 @@ void Assembler::WriteObjectCodeFile() {
 
 // escreve o arquivo .lst com this->listingLines e this->listingErrors
 void Assembler::WriteListingFile() {
+
   std::ofstream lstFile(this->lstFilePath);
-  if (!lstFile) {
-    std::cerr << "Erro ao abrir o arquivo de listagem: " << this->lstFilePath
+
+  if (!lstFile.is_open()) {
+    std::cerr << "Erro ao criar o arquivo de listagem: " << this->lstFilePath
               << std::endl;
-    return;
   }
 
   lstFile << "\nLISTAGEM DE CÓDIGO\n";

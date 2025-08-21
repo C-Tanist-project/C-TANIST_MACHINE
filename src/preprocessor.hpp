@@ -65,6 +65,6 @@ class MacroProcessor {
   void PopActualParameterLevel(int level);
 
 public:
-  MacroProcessor(const std::string &asmFilePath);
-  void Pass();
+  MacroProcessor();
+  void Pass(const std::string &asmFilePath);
 };

@@ -240,16 +240,13 @@ void MacroProcessor::PopActualParameterLevel(int level) {
   }
 }
 
-MacroProcessor::MacroProcessor(const std::string &asmFilePath) {
-  this->asmFilePath = asmFilePath;
-  this->outputFilePath = "MASMAPRG.ASM";
+MacroProcessor::MacroProcessor() {
   this->definitionLevel = 0;
   this->expansionLevel = 0;
 }
 
-void MacroProcessor::Pass() {
+void MacroProcessor::Pass(const std::string &asmFilePath) {
   std::ifstream file(asmFilePath);
-  std::ofstream output(outputFilePath);
 
   std::string line;
 
@@ -342,7 +339,7 @@ void MacroProcessor::Pass() {
       }
 
       if (this->definitionLevel == 0) {
-        output << line << std::endl;
+        std::cout << line << std::endl;
       } else {
         this->currentMacroDefinition->macroSkeleton.append(line + '\n');
       }
@@ -356,5 +353,4 @@ void MacroProcessor::Pass() {
       std::getline(file, line);
     }
   }
-  output.close();
 }
