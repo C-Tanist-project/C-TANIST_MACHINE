@@ -82,12 +82,10 @@ class Assembler {
   std::unordered_map<std::string, AssemblerIntDefData>
       intDefTable;        // tabela de simbolos definidos no modulo
   int16_t stackSize = 0;  // tamanho da pilha
-  std::unordered_map<std::string, std::vector<int16_t>>
-      intUseTable;  // tabela de simbolos usados no modulo
 
-  // tabela de símbolos
+  std::unordered_map<int16_t, OperandFormat> relocationTable;
+  std::unordered_map<std::string, std::vector<int16_t>> intUseTable;
   std::unordered_map<std::string, AssemblerSymbolData> symbolTable;
-  // tabela de literais
   std::unordered_map<std::string, AssemblerLiteralData> literalTable;
   AssemblerExitCode FirstPass();
   AssemblerExitCode SecondPass();
