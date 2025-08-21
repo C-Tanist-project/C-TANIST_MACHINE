@@ -1060,6 +1060,7 @@ struct Tab {
 
 static std::vector<Tab> tabs;
 static std::vector<std::string> openFilePaths;
+static std::vector<std::string> openFileName;
 static int currentTab = -1;
 
 void AddTab(const std::filesystem::path& path, const std::string& content) {
@@ -1079,6 +1080,8 @@ void AddTab(const std::filesystem::path& path, const std::string& content) {
 
   tabs.push_back(std::move(newTab));
   openFilePaths.push_back(path.string());
+  std::string filename = path.filename().string();
+  openFileName.push_back("./obj/" + filename + ".obj");
   currentTab = (int)tabs.size() - 1;
 }
 
@@ -1086,6 +1089,7 @@ void RemoveTab(int index) {
   if (index < 0 || index >= (int)tabs.size()) return;
   tabs.erase(tabs.begin() + index);
   openFilePaths.erase(openFilePaths.begin() + index);
+  openFileName.erase(openFileName.begin() + index);
   if (currentTab >= index) currentTab--;
   if (tabs.empty()) currentTab = -1;
 }
@@ -1174,6 +1178,26 @@ void RenderTextEditor(VMState& vm, bool& window) {
     ImGui::EndPopup();
   }
 
+  if (ImGui::BeginPopupModal("Erro: Loader", NULL,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::Text("Por favor, selecione pelo menos 2 arquivos.");
+    ImGui::Separator();
+    if (ImGui::Button("OK", ImVec2(120, 0))) {
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+  }
+
+  if (ImGui::BeginPopupModal("Erro: Completo", NULL,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::Text("Por favor, selecione pelo menos 2 arquivos.");
+    ImGui::Separator();
+    if (ImGui::Button("OK", ImVec2(120, 0))) {
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+  }
+
   if (ImGui::BeginPopup("popup_opcoes_executar")) {
     ImGui::Text("Escolha até qual etapa executar:");
     ImGui::Separator();
@@ -1231,7 +1255,7 @@ void RenderTextEditor(VMState& vm, bool& window) {
           std::lock_guard<std::mutex> lock(vm.consoleMutex);
           vm.consoleMessages.push(buffer.str());
           Asm.CallAssembler(openFilePaths);
-          //->Console .lst
+          LogLstFilesToConsole(vm, openFilePaths);
         }
         break;
 
@@ -1244,20 +1268,36 @@ void RenderTextEditor(VMState& vm, bool& window) {
           std::lock_guard<std::mutex> lock(vm.consoleMutex);
           vm.consoleMessages.push(buffer.str());
           Asm.CallAssembler(openFilePaths);
-          // Lnk.Link(openFilePaths);
+          Lnk.Link(openFileName);
         }
         break;
 
       case 4:  // Loader
-        Asm.CallAssembler(openFilePaths);
-        // Lnk.Link(openFilePaths);
-        // loader
+        if (openFilePaths.size() < 2) {
+          ImGui::OpenPopup("Erro: Loader");
+        } else {
+          std::stringstream buffer;
+          buffer << "Executando até o Linker...\n";
+          std::lock_guard<std::mutex> lock(vm.consoleMutex);
+          vm.consoleMessages.push(buffer.str());
+          Asm.CallAssembler(openFilePaths);
+          Lnk.Link(openFileName);
+          // Lad.Load();
+        }
         break;
 
       case 5:  // Completo
-        Asm.CallAssembler(openFilePaths);
-        // Lnk.Link(openFilePaths);
-        // loader
+        if (openFilePaths.size() < 2) {
+          ImGui::OpenPopup("Erro: Completo");
+        } else {
+          std::stringstream buffer;
+          buffer << "Executando até o Linker...\n";
+          std::lock_guard<std::mutex> lock(vm.consoleMutex);
+          vm.consoleMessages.push(buffer.str());
+          Asm.CallAssembler(openFilePaths);
+          Lnk.Link(openFileName);
+          // Lad.Load();
+        }
         break;
     }
 
@@ -1316,6 +1356,34 @@ void RenderTextEditor(VMState& vm, bool& window) {
   }
 
   ImGui::End();
+}
+
+static void LogLstFilesToConsole(
+    VMState& vm, const std::vector<std::string>& sourceFilePaths) {
+  std::stringstream lstContents;
+  lstContents << "\n--- Arquivos de Listagem (.lst) Gerados ---\n";
+
+  for (const auto& pathStr : sourceFilePaths) {
+    std::filesystem::path inputPath(pathStr);
+
+    std::string filename = inputPath.stem().string();
+
+    std::filesystem::path lstPath = "lst/" + filename + ".lst";
+
+    std::ifstream file(lstPath);
+    if (file) {
+      lstContents << "\n--- Conteúdo de: " << lstPath.string() << " ---\n";
+      lstContents << file.rdbuf();
+    } else {
+      lstContents << "\nERRO: Não foi possível abrir " << lstPath.string()
+                  << "\n";
+    }
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(vm.consoleMutex);
+    vm.consoleMessages.push(lstContents.str());
+  }
 }
 
 void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder) {
