@@ -192,22 +192,40 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
     ObjSectionType section = static_cast<ObjSectionType>(rawType);
 
     switch (section) {
-      case ObjSectionType::NAME: {
-        int16_t nameLen;
-        objFile.read(reinterpret_cast<char *>(&nameLen), sizeof(int16_t));
+    case ObjSectionType::NAME: {
+      int16_t nameLen;
+      objFile.read(reinterpret_cast<char *>(&nameLen), sizeof(int16_t));
 
-        std::string name(nameLen, '\0');
-        objFile.read(&name[0], nameLen);
+      std::string name(nameLen, '\0');
+      objFile.read(&name[0], nameLen);
 
-        module.startName = name;
+      module.startName = name;
 
-        break;
-      }
-      case ObjSectionType::STACK_SIZE: {
-        objFile.read(reinterpret_cast<char *>(&module.stackSize),
-                     sizeof(int16_t));
-        globalStackSize += module.stackSize;
-        break;
+      break;
+    }
+
+    case ObjSectionType::STACK_SIZE: {
+      objFile.read(reinterpret_cast<char *>(&module.stackSize),
+                   sizeof(int16_t));
+      globalStackSize += module.stackSize;
+      break;
+    }
+
+    case ObjSectionType::INTDEF: {
+      int16_t defCount;
+      objFile.read(reinterpret_cast<char *>(&defCount), sizeof(int16_t));
+
+      for (int i = 0; i < defCount; ++i) {
+        int16_t labelLen;
+        objFile.read(reinterpret_cast<char *>(&labelLen), sizeof(int16_t));
+
+        std::string label(labelLen, '\0');
+        objFile.read(&label[0], labelLen);
+
+        int16_t address;
+        objFile.read(reinterpret_cast<char *>(&address), sizeof(int16_t));
+
+        module.intDefTable[label] = address;
       }
       break;
     }
@@ -262,16 +280,18 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
       break;
     }
 
-    case ObjSectionType::END:
+    case ObjSectionType::END: {
       finished = true;
       break;
+    }
 
-    default:
+    default: {
       errors.push_back("Seção desconhecida no arquivo: " + filePath +
                        " (tipo " + std::to_string(static_cast<int>(section)) +
                        ")");
       finished = true;
       break;
+    }
     }
   }
 
