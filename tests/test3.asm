@@ -1,5 +1,6 @@
 INTDEF Pedro
 INTDEF Quadrado
+STACK 4
 Bernardo INTUSE
 Irene INTUSE
 Renato ADD Irene

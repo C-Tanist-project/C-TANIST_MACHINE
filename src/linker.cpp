@@ -39,10 +39,10 @@ void Linker::GenerateOutput(const std::filesystem::path &outputPath) {
   const char magic[4] = {'H', 'P', 'X', '\0'};
   out.write(magic, sizeof(magic));
 
-  out.write(reinterpret_cast<char *>(this->currentLoadAddress),
+  out.write(reinterpret_cast<char *>(&this->currentLoadAddress),
             sizeof(int16_t));
 
-  out.write(reinterpret_cast<char *>(this->globalStackSize), sizeof(int16_t));
+  out.write(reinterpret_cast<char *>(&this->globalStackSize), sizeof(int16_t));
 
   int32_t codeSize = this->linkedCode.size();
   out.write(reinterpret_cast<char *>(&codeSize), sizeof(codeSize));

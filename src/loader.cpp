@@ -1,6 +1,6 @@
 #include "loader.hpp"
 
-using RelocOffset = int32_t;
+using RelocOffset = int16_t;
 using RelocFormat = int16_t;
 
 void Loader::ReadHPX(const std::filesystem::path &filePath) {
@@ -13,8 +13,9 @@ void Loader::ReadHPX(const std::filesystem::path &filePath) {
   std::cout << "--- Lendo arquivo HPX: " << filePath.string() << " ---\n\n";
 
   // 1. Ler e verificar o Magic Number
-  char magic[3];
+  char magic[4];
   in.read(magic, sizeof(magic));
+  std::cout << "MAGIC NUMER LIDO:" << magic << std::endl;
   if (std::string(magic, 3) != "HPX") {
     throw std::runtime_error("Erro: O arquivo não é um formato HPX válido.");
   }
@@ -22,14 +23,14 @@ void Loader::ReadHPX(const std::filesystem::path &filePath) {
   std::cout << "  Magic Number: HPX (Válido)\n";
 
   // 2. Ler Entry Point e Tamanho da Pilha
-  int32_t entryPoint, stackSize;
+  int16_t entryPoint, stackSize;
   in.read(reinterpret_cast<char *>(&entryPoint), sizeof(entryPoint));
   in.read(reinterpret_cast<char *>(&stackSize), sizeof(stackSize));
   std::cout << "  Entry Point: " << entryPoint << "\n";
   std::cout << "  Tamanho da Pilha: " << stackSize << " bytes\n\n";
 
   // 3. Ler a seção de código
-  int32_t codeSize;
+  int16_t codeSize;
   in.read(reinterpret_cast<char *>(&codeSize), sizeof(codeSize));
   std::vector<int16_t> code(codeSize);
   in.read(reinterpret_cast<char *>(code.data()), codeSize * sizeof(int16_t));
@@ -43,7 +44,7 @@ void Loader::ReadHPX(const std::filesystem::path &filePath) {
   std::cout << "\n";
 
   // 4. Ler a tabela de relocação
-  int32_t relocSize;
+  int16_t relocSize;
   in.read(reinterpret_cast<char *>(&relocSize), sizeof(relocSize));
 
   std::cout << "[Tabela de Relocação] (" << relocSize << " entradas)\n";
