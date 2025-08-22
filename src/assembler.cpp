@@ -423,6 +423,8 @@ AssemblingStatus Assembler::SecondPass() {
               status = buildError(lineCounter, operand, SYMBOL_UNDEFINED);
               return;
             }
+            relocationTable.emplace(static_cast<int16_t>(objectCode.size()),
+                                    OperandFormat::INDIRECT);
             objectCode.push_back(symbolTable[operand].address);
             generatedCodeForLst += " ";
             generatedCodeForLst += std::to_string(symbolTable[operand].address);
@@ -469,9 +471,13 @@ AssemblingStatus Assembler::SecondPass() {
             if (operand[0] == '@') {  // literal
               address = literalTable[operand].address;
               addressToLst = std::to_string(literalTable[operand].address);
+              relocationTable.emplace(static_cast<int16_t>(objectCode.size()),
+                                      OperandFormat::DIRECT);
             } else if (symbolTable.contains(operand)) {  // símbolo local
               address = symbolTable[operand].address;
               addressToLst = std::to_string(symbolTable[operand].address);
+              relocationTable.emplace(static_cast<int16_t>(objectCode.size()),
+                                      OperandFormat::DIRECT);
             } else {  // símbolo definido em outro módulo
               address = 0;
               addressToLst = "0";
@@ -577,6 +583,19 @@ void Assembler::WriteObjectCodeFile() {
   objFile.write(reinterpret_cast<const char *>(this->objectCode.data()),
                 this->objectCode.size() * sizeof(int16_t));
 
+  // RELOCATION (nova seção)
+  int16_t relocationSection = static_cast<int16_t>(ObjSectionType::RELOCATION);
+  objFile.write(reinterpret_cast<const char *>(&relocationSection),
+                sizeof(int16_t));
+  int16_t relocCount = static_cast<int16_t>(this->relocationTable.size());
+  objFile.write(reinterpret_cast<const char *>(&relocCount), sizeof(int16_t));
+
+  for (const auto &[address, type] : this->relocationTable) {
+    objFile.write(reinterpret_cast<const char *>(&address), sizeof(int16_t));
+    int16_t typeVal = static_cast<int16_t>(type);  // DIRECT ou INDIRECT
+    objFile.write(reinterpret_cast<const char *>(&typeVal), sizeof(int16_t));
+  }
+
   // END
   int16_t endSection = static_cast<int16_t>(ObjSectionType::END);
   objFile.write(reinterpret_cast<const char *>(&endSection), sizeof(int16_t));
@@ -631,6 +650,7 @@ void Assembler::ResetAssembler() {
   stackSize = 0;
   symbolTable.clear();
   literalTable.clear();
+  relocationTable.clear();
 }
 
 void Assembler::CallAssembler(std::vector<std::string> paths) {

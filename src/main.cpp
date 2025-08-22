@@ -38,6 +38,11 @@ int main(int argc, char *argv[]) {
   linker->ReadObjectCodeFile("./obj/test4.obj");
   linker->printModules();
 
+  std::vector<std::string> objPaths;
+  objPaths.push_back("./obj/test.obj");
+  objPaths.push_back("./obj/test2.obj");
+  linker->FirstPass(objPaths);
+
   std::thread engineThread(&VMEngine::Run, &engine, std::ref(vm));
 
   GLFWwindow *window = MainWindowSetup(1280, 720, "Pentacle VM");

@@ -7,10 +7,18 @@
 #include <unordered_map>
 #include <vector>
 
-#include "types.hpp"
-
 Linker::Linker() {}
 
+void Linker::GenerateOutput(const std::string &outputName) {
+  // criar o .hpx contendo código binário + tabela de relocação global
+}
+void Linker::SecondPass() {
+
+  // Concatenar os módulos
+  // Resolver os símbolos da intUseTable
+  // criar tabela de relocação global
+
+};
 void Linker::FirstPass(const std::vector<std::string> &objFilePaths) {
   modules.clear();
   globalSymbolTable.clear();
@@ -26,6 +34,37 @@ void Linker::FirstPass(const std::vector<std::string> &objFilePaths) {
     if (symbol.first == UNRESOLVED_ADDRESS) {
       errors.push_back("Símbolo global não resolvido: " + name);
     }
+  }
+
+  for(auto &mod : modules) {
+    for(auto &intuse : mod.intUseTable) {
+      auto &positions = intuse.second;
+      for(auto &pos : positions) {
+        pos += mod.loadAddress;
+      }
+    }
+
+    std::unordered_map<int16_t, OperandFormat> newRelocationTable;
+    for (const auto &rel : mod.relocationTable) {
+      const int16_t locaIndex = rel.first;
+      const OperandFormat &format = rel.second;
+
+      switch (format) {
+        case IMMEDIATE:
+          break;
+        case DIRECT:
+        case INDIRECT:
+          mod.code[locaIndex] += mod.loadAddress;
+          break;
+        default:
+          errors.push_back("Tipo de relocação desconhecido: " + std::to_string(static_cast<int>(format)));
+          break;
+      }
+
+      const int16_t globalIndex = locaIndex + mod.loadAddress;
+      newRelocationTable[globalIndex] = format;
+    }
+    mod.relocationTable = std::move(newRelocationTable);
   }
 }
 
@@ -75,7 +114,7 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
 
           int16_t relocatedAddr = address + module.loadAddress;
 
-          if (globalSymbolTable.count(label)) {
+          if (globalSymbolTable.count(label) && globalSymbolTable[label].first != UNRESOLVED_ADDRESS) {
             errors.push_back("Símbolo global já definido: " + label + " [" +
                              filePath + "/" + globalSymbolTable[label].second +
                              "]");
@@ -101,7 +140,7 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
           int16_t addrCount;
           objFile.read(reinterpret_cast<char *>(&addrCount), sizeof(int16_t));
 
-          std::vector<int> addresses(addrCount);
+          std::vector<int16_t> addresses(addrCount);
           for (int j = 0; j < addrCount; ++j) {
             int16_t addr;
             objFile.read(reinterpret_cast<char *>(&addr), sizeof(int16_t));
@@ -110,7 +149,7 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
 
           module.intUseTable[label] = std::move(addresses);
 
-          if (globalSymbolTable.contains(label)) {
+          if (!globalSymbolTable.contains(label)) {
             globalSymbolTable[label] = {UNRESOLVED_ADDRESS, filePath};
           }
         }
@@ -123,6 +162,22 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
         module.code.resize(codeSize);
         objFile.read(reinterpret_cast<char *>(module.code.data()),
                      codeSize * sizeof(int16_t));
+        break;
+      }
+
+      case ObjSectionType::RELOCATION: {
+        int16_t relocCount;
+        objFile.read(reinterpret_cast<char *>(&relocCount), sizeof(int16_t));
+
+        for (int i = 0; i < relocCount; ++i) {
+          int16_t address;
+          int16_t typeVal;
+
+          objFile.read(reinterpret_cast<char *>(&address), sizeof(int16_t));
+          objFile.read(reinterpret_cast<char *>(&typeVal), sizeof(int16_t));
+
+          module.relocationTable[address] = static_cast<OperandFormat>(typeVal);
+        }
         break;
       }
 
@@ -168,8 +223,20 @@ void Linker::printModules() {
       std::cout << "]\n";
     }
 
+    std::cout << "Relocation Table:\n";
+    for (const auto &relocIndex : mod.relocationTable) {
+      std::cout << "  Relocate address index: " << relocIndex.first << "\n";
+    }
+
+    std::cout << "Global Symbol Table:\n";
+    for (const auto &[symbol, where] : globalSymbolTable) {
+      std::cout << "Símbolo: " << symbol << " " << "Endereço: " << where.first
+                << " "
+                << "Módulo: " << where.second << std::endl;
+    }
     std::cout << "Stack Size: " << mod.stackSize << "\n";
     std::cout << "Start Address: " << mod.startAddress << "\n";
     std::cout << "Load Address: " << mod.loadAddress << "\n";
+    std::cout << "\n";
   }
 }
