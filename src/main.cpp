@@ -6,19 +6,21 @@
 #include "vm.hpp"
 
 int main(int argc, char *argv[]) {
+  AssemblyPipeline pipeline("new-project");
+
   if (argc > 2 && strcmp(argv[1], "-C") == 0) {
-    AssemblyPipeline pipeline("new-project");
     for (int i = 2; i < argc; ++i) {
       pipeline.AddRawSource(argv[i]);
     }
     pipeline.Pass();
-    return 0;
   }
 
   Operations::InitializeMap();
   VMEngine engine;
   VMState vm;
   VMStateSetup(vm);
+
+  pipeline.SetMemory(vm);
 
   std::thread engineThread(&VMEngine::Run, &engine, std::ref(vm));
 

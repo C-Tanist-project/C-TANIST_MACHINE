@@ -2,8 +2,8 @@
 #include "assembler.hpp"
 #include "linker.hpp"
 #include "loader.hpp"
-
 #include "preprocessor.hpp"
+#include "vm.hpp"
 
 #include <filesystem>
 #include <string>
@@ -21,6 +21,7 @@ class AssemblyPipeline {
   Loader loader;
 
 public:
+  bool SetMemory(VMState &vm);
   AssemblyPipeline(const std::string &projectName);
   bool AddRawSource(const std::string &filePath);
   void Pass(void);

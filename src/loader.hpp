@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "types.hpp"
+#include "vm.hpp"
 
 class Loader {
 private:
@@ -32,4 +33,5 @@ private:
 public:
   Loader();
   void Pass(std::filesystem::path &filePath);
+  bool SetMemory(VMState &vm);
 };
