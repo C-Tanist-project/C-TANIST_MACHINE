@@ -15,6 +15,7 @@
 
 #include "external/ImGuiFileDialog.h"
 #include "external/ImGuiFileDialogConfig.h"
+#include "external/TextEditor.h"
 #include "external/codicon_cpp_header.h"
 #include "external/imgui_memory_editor.h"
 #include "imgui.h"
@@ -27,6 +28,8 @@ typedef struct highlightdata {
   int16_t pc;
 } HighlightData;
 
+bool LoadTextureFromFile(const char *filename, GLuint *out_texture,
+                         int *out_width, int *out_height);
 void GLFWErrorCallback(int error, const char *description);
 GLFWwindow *MainWindowSetup(const int width, const int height,
                             const char *title);
@@ -36,6 +39,7 @@ void RenderMainWindow(GLFWwindow *window, VMState &vm);
 void RenderControlsWindow(bool &window, VMState &vm);
 void RenderVMState(VMState &vm, bool &window);
 void RenderConsoleWindow(VMState &vm, bool &window);
+void RenderTextEditor(VMState &vm, bool &window);
 void WindowCleanup(GLFWwindow *window);
 void SkipToEnd(VMState &vm);
 void SetupCtanistStyle();

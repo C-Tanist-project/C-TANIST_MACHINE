@@ -1,4 +1,5 @@
 #include "ui.hpp"
+
 #include "external/codicon_hex.h"
 #include "types.hpp"
 
@@ -11,18 +12,18 @@ void RenderMainWindow(GLFWwindow *window, VMState &vm) {
   ImGui_ImplGlfw_NewFrame();
 
   ImGui::NewFrame();
-  // Renderização começa aqui
   static bool showControlWindow = false;
   static bool showMemoryEditorWindow = false;
   static bool showVMStateWindow = false;
   static bool showConsoleWindow = false;
+  static bool showTextWindow = false;
 
-  // Menu de contexto para abrir ou fechar as janelas
   if (ImGui::BeginPopupContextVoid("MenuJanelas")) {
     ImGui::MenuItem("Controles da VM", NULL, &showControlWindow);
     ImGui::MenuItem("Editor de Memória", NULL, &showMemoryEditorWindow);
     ImGui::MenuItem("Registradores", NULL, &showVMStateWindow);
     ImGui::MenuItem("Console", NULL, &showConsoleWindow);
+    ImGui::MenuItem("Editor de Texto", NULL, &showTextWindow);
     ImGui::EndPopup();
   }
 
@@ -33,6 +34,8 @@ void RenderMainWindow(GLFWwindow *window, VMState &vm) {
   RenderVMState(vm, showVMStateWindow);
 
   RenderConsoleWindow(vm, showConsoleWindow);
+
+  RenderTextEditor(vm, showTextWindow);
 
   ImGui::Render();
 

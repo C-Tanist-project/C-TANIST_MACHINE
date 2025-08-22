@@ -32,7 +32,6 @@ imgui_compiled_options = ['opengl=enabled',
                           'sdl3_renderer=disabled',
                           'allegro5=disabled']
 
-
 glfw_lib = dependency('glfw3', required: true, static: true)
 imgui_lib = dependency('imgui', required: true, static: true, default_options: imgui_compiled_options)
 
