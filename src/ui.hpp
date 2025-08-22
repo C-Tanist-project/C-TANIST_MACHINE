@@ -28,6 +28,8 @@ typedef struct highlightdata {
   int16_t pc;
 } HighlightData;
 
+bool LoadTextureFromFile(const char *filename, GLuint *out_texture,
+                         int *out_width, int *out_height);
 void GLFWErrorCallback(int error, const char *description);
 GLFWwindow *MainWindowSetup(const int width, const int height,
                             const char *title);

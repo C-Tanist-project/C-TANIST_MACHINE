@@ -5,6 +5,7 @@
 #include <thread>
 
 #include "assembler.hpp"
+#include "imgui.h"
 #include "linker.hpp"
 #include "preprocessor.hpp"
 #include "ui.hpp"
@@ -21,19 +22,6 @@ int main(int argc, char *argv[]) {
   VMState vm;
 
   VMStateSetup(vm);
-
-  Assembler *assembler = new Assembler();
-  std::vector<std::string> paths;
-  paths.push_back("./tests/test.asm");
-  paths.push_back("./tests/test2.asm");
-  assembler->CallAssembler(paths);
-
-  Linker *linker = new Linker;
-
-  std::vector<std::string> objPaths;
-  objPaths.push_back("./obj/test.obj");
-  objPaths.push_back("./obj/test2.obj");
-  linker->FirstPass(objPaths);
 
   std::thread engineThread(&VMEngine::Run, &engine, std::ref(vm));
 
