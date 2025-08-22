@@ -40,6 +40,11 @@ AssemblyPipeline::AssemblyPipeline(const std::string &projectName)
         std::cerr << "ERRO: arquivo já existe com o nome do arquivo  '"
                   << path.string() << "'." << std::endl;
         throw(-1);
+      } else {
+        for (const auto &entry : std::filesystem::directory_iterator(path)) {
+          // remove_all can delete files and directories recursively
+          std::filesystem::remove_all(entry.path());
+        }
       }
     }
   } catch (const std::filesystem::filesystem_error &e) {
@@ -47,7 +52,7 @@ AssemblyPipeline::AssemblyPipeline(const std::string &projectName)
     throw;
   }
 
-  assembler = *new Assembler();
-  linker = *new Linker();
-  loader = *new Loader();
+  assembler = Assembler();
+  linker = Linker();
+  loader = Loader();
 }
