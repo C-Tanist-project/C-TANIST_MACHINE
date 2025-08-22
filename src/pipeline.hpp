@@ -1,6 +1,8 @@
 #pragma once
 #include "assembler.hpp"
 #include "linker.hpp"
+#include "loader.hpp"
+
 #include "preprocessor.hpp"
 
 #include <filesystem>
@@ -16,7 +18,7 @@ class AssemblyPipeline {
   MacroProcessor macroProcessor;
   Assembler assembler;
   Linker linker;
-  // Loader loader();
+  Loader loader;
 
 public:
   AssemblyPipeline(const std::string &projectName);

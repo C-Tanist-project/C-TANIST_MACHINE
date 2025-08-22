@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -6,7 +7,7 @@
 #include "types.hpp"
 
 class Linker {
- private:
+private:
   struct Module {
     std::string name;
     std::vector<int16_t> code;
@@ -31,18 +32,19 @@ class Linker {
   std::unordered_map<std::string, std::pair<int16_t, std::string>>
       globalSymbolTable;
   std::vector<std::string> errors;
+  std::string globalName;
   int16_t globalStackSize = 0;
   int16_t currentLoadAddress = 0;
   std::vector<int16_t> linkedCode;
   std::unordered_map<int16_t, OperandFormat> globalRelocationTable;
 
   void SecondPass();
-  void GenerateOutput(const std::string& outputName);
+  void GenerateOutput(const std::filesystem::path &outputPath);
 
- public:
+public:
   Linker();
-  void FirstPass(const std::vector<std::string>& objFilePaths);
-  void ReadObjectCodeFile(const std::string& filePath);
+  void FirstPass(const std::vector<std::string> &objFilePaths);
+  void ReadObjectCodeFile(const std::string &filePath);
   void printModules();
-  void Link(const std::vector<std::string>& objFilePaths);
+  void Pass(const std::filesystem::path &projectFolder);
 };

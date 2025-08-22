@@ -10,7 +10,8 @@ srcs = ['src/main.cpp',
         'src/external/ImGuiFileDialog.cpp',
         'src/windows/vmstate.cpp',
         'src/assembler.cpp',
-        'src/linker.cpp', 
+        'src/linker.cpp',
+        'src/loader.cpp',
         'src/preprocessor.cpp',
         'src/pipeline.cpp']
 

@@ -20,8 +20,6 @@ int main(int argc, char *argv[]) {
   VMState vm;
   VMStateSetup(vm);
 
-  Linker *linker = new Linker();
-
   std::thread engineThread(&VMEngine::Run, &engine, std::ref(vm));
 
   GLFWwindow *window = MainWindowSetup(1280, 720, "Pentacle VM");
