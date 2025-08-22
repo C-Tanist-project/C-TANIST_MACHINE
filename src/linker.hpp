@@ -18,7 +18,15 @@ class Linker {
     int16_t loadAddress = 0;
   };
 
+  struct GlobalModule {
+    std::vector<int16_t> globalCode;
+    std::unordered_map<int16_t, OperandFormat> globalRelocationTable;
+    int16_t globalStackSize = 0;
+    int16_t entryPoint = 0;
+  };
+
   std::vector<Module> modules;
+  GlobalModule globalModule;
 
   std::unordered_map<std::string, std::pair<int16_t, std::string>>
       globalSymbolTable;
