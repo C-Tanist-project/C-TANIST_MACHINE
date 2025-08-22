@@ -105,8 +105,8 @@ Macro_t *MacroProcessor::SearchDefinedMacros(std::string line) {
   return NULL;
 }
 
-std::vector<std::string>
-MacroProcessor::GetActualParameterList(std::string line, Macro_t *foundMacro) {
+std::vector<std::string> MacroProcessor::GetActualParameterList(
+    std::string line, Macro_t *foundMacro) {
   std::vector<std::string> currentActualParameters;
 
   std::string prototype = foundMacro->macroPrototype;
@@ -155,8 +155,7 @@ std::string MacroProcessor::ReplaceFormalParameters(std::string line) {
   std::sregex_iterator it(line.cbegin(), line.cend(), matchFormalParameter);
   std::sregex_iterator end;
 
-  if (it == end)
-    return line;
+  if (it == end) return line;
 
   std::string newLine;
   auto lastMatchPosition = line.cbegin();
@@ -278,7 +277,16 @@ void MacroProcessor::Pass(const std::string &asmFilePath) {
     exit(-1);
   }
 
-  while (!line.empty()) {
+  while (true) {
+    if (line.empty()) {
+      if (this->expansionLevel > 0) {
+        if (!std::getline(*(this->inputSourceStack.back().get()), line)) break;
+      } else {
+        if (!std::getline(file, line)) break;
+      }
+      continue;
+    }
+
     do {
       if (std::regex_search(line, matchMacro)) {
         nextLineIsPrototype = true;
@@ -357,10 +365,10 @@ void MacroProcessor::Pass(const std::string &asmFilePath) {
     } while (false);
 
     if (this->expansionLevel > 0) {
-      std::getline(*(this->inputSourceStack.back().get()), line);
+      if (!std::getline(*(this->inputSourceStack.back().get()), line)) break;
       line = ReplaceSubstitutionPatterns(line);
     } else {
-      std::getline(file, line);
+      if (!std::getline(file, line)) break;
     }
   }
   output.close();
