@@ -1,4 +1,6 @@
 #include "loader.hpp"
+#include <stdio.h>
+#include <stdlib.h>
 
 using RelocOffset = int16_t;
 using RelocFormat = int16_t;
@@ -29,6 +31,9 @@ void Loader::ReadHPX(const std::filesystem::path &filePath) {
   std::cout << "  Entry Point: " << entryPoint << "\n";
   std::cout << "  Tamanho da Pilha: " << stackSize << " bytes\n\n";
 
+  this->module.entryPoint = entryPoint;
+  this->module.stackSize = stackSize;
+
   // 3. Ler a seção de código
   int16_t codeSize;
   in.read(reinterpret_cast<char *>(&codeSize), sizeof(codeSize));
@@ -39,7 +44,8 @@ void Loader::ReadHPX(const std::filesystem::path &filePath) {
   for (int i = 0; i < codeSize; ++i) {
     std::cout << "  " << std::setw(4) << std::setfill('0') << i << ": 0x"
               << std::hex << std::setw(4) << std::setfill('0')
-              << static_cast<uint16_t>(code[i]) << std::dec << "\n";
+              << static_cast<int16_t>(code[i]) << std::dec << "\n";
+    this->module.code.push_back(static_cast<int16_t>(code[i]));
   }
   std::cout << "\n";
 
@@ -92,6 +98,27 @@ void Loader::Pass(std::filesystem::path &filePath) {
   }
   ReadHPX(file);
   RelocateModule();
+}
+
+bool Loader::SetMemory(VMState &vm) {
+  std::vector<int16_t> memory = this->module.code;
+
+  vm.memory[2] = this->module.stackSize;
+  // vm.memory[1] = this->module.entryPoint;
+  vm.memory[this->module.stackSize + 3] = static_cast<int16_t>(56);
+
+  vm.memory[1] = this->module.stackSize + 3;
+
+  int j = 0;
+  if (memory.size() + 4 + this->module.stackSize > 500) {
+    return false;
+  } else {
+    for (int i = this->module.stackSize + 4;
+         i < this->module.code.size() + this->module.stackSize + 4; ++i) {
+      vm.memory[i] = this->module.code[j++];
+    }
+    return true;
+  }
 }
 
 Loader::Loader() {}

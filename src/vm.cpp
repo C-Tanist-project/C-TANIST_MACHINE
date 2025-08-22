@@ -1,7 +1,7 @@
 #include "vm.hpp"
 
 void VMStateSetup(VMState &vm) {
-  vm.pc = 32;
+  vm.pc = 0;
   vm.sp = 0;
   vm.acc = 0;
   vm.mop = 0;
@@ -94,13 +94,23 @@ void ExecuteStep(VMState &vm) {
     offset = 1;
     break;
   case OP_PUSH:
-    if (vm.sp == 31) {
+    if (vm.sp == vm.memory[1]) {
       vm.pc = 0;
+      {
+        std::lock_guard<std::mutex> lock(vm.consoleMutex);
+        vm.consoleMessages.push("EXCEPTION: Stack Overflow.");
+      }
+      vm.isHalted = true;
       return;
     }
   case OP_POP:
     if (vm.sp == 2) {
       vm.pc = 0;
+      {
+        std::lock_guard<std::mutex> lock(vm.consoleMutex);
+        vm.consoleMessages.push("EXCEPTION: Stack Underflow.");
+      }
+      vm.isHalted = true;
       return;
     }
   default:

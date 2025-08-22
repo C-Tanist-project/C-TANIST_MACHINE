@@ -14,6 +14,8 @@ bool AssemblyPipeline::AddRawSource(const std::string &filePath) {
   return true;
 }
 
+bool AssemblyPipeline::SetMemory(VMState &vm) { return loader.SetMemory(vm); }
+
 AssemblyPipeline::AssemblyPipeline(const std::string &projectName)
     : macroProcessor((std::filesystem::path(projectName) / "ASM").string()) {
   std::filesystem::path projectDir(projectName);
