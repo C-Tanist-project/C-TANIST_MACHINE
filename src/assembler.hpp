@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -97,5 +98,5 @@ private:
 
 public:
   Assembler();
-  void Pass(std::string &asmFolder, std::string &outputFolder);
+  void Pass(std::filesystem::path &projectFolder);
 };

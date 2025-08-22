@@ -586,9 +586,18 @@ void Assembler::ResetAssembler() {
   relocationTable.clear();
 }
 
-void Assembler::Pass(std::string &asmFolder, std::string &outputFolder) {
-  std::filesystem::path inputFolder(asmFolder);
-  std::filesystem::path outputFolder(outputFolder);
+void Assembler::Pass(std::filesystem::path &projectFolder) {
+  std::filesystem::path inputPath = projectFolder / "ASM";
+  std::filesystem::path outputPath = projectFolder / "OBJ";
+  std::filesystem::path listingPath = projectFolder / "LST";
 
-  Assemble(asmFilePath, objFilePath, lstFilePath);
+  for (const auto &entry : std::filesystem::directory_iterator(inputPath)) {
+    if (std::filesystem::is_regular_file(entry.status())) {
+      std::cout << entry.path() << std::endl;
+      std::filesystem::path currentFile(entry.path());
+      Assemble(currentFile,
+               outputPath / currentFile.filename().replace_extension(".OBJ"),
+               listingPath / currentFile.filename().replace_extension(".LST"));
+    }
+  }
 }

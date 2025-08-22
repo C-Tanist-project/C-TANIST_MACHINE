@@ -245,7 +245,7 @@ MacroProcessor::MacroProcessor(const std::string &outputFolder) {
   this->outputFilePath = outputFolder;
 }
 
-std::string MacroProcessor::Pass(const std::string &asmFilePath) {
+void MacroProcessor::Pass(const std::string &asmFilePath) {
   this->definitionLevel = 0;
   this->expansionLevel = 0;
 
@@ -363,7 +363,5 @@ std::string MacroProcessor::Pass(const std::string &asmFilePath) {
       std::getline(file, line);
     }
   }
-  std::cout << "Escrito em: " << outputPathCorrector.string() << std::endl;
   output.close();
-  return std::format("MASMAPRG-{}", outputFilePath);
 }

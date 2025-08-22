@@ -66,5 +66,5 @@ class MacroProcessor {
 
 public:
   MacroProcessor(const std::string &outputFolder);
-  std::string Pass(const std::string &asmFilePath);
+  void Pass(const std::string &asmFilePath);
 };

@@ -1,6 +1,8 @@
 #include "pipeline.hpp"
 #include <filesystem>
 
+void AssemblyPipeline::Pass(void) { assembler.Pass(this->projectPath); }
+
 bool AssemblyPipeline::AddRawSource(const std::string &filePath) {
   this->rawSourceFiles.push_back(filePath);
   this->macroProcessor.Pass(filePath);
@@ -11,8 +13,10 @@ bool AssemblyPipeline::AddRawSource(const std::string &filePath) {
 AssemblyPipeline::AssemblyPipeline(const std::string &projectName)
     : macroProcessor((std::filesystem::path(projectName) / "ASM").string()) {
   std::filesystem::path projectDir(projectName);
+  this->projectPath = projectDir;
   std::vector<std::filesystem::path> subdirs = {
-      projectDir / "ASM", projectDir / "OBJ", projectDir / "HPX"};
+      projectDir / "ASM", projectDir / "OBJ", projectDir / "HPX",
+      projectDir / "LST"};
 
   try {
     if (!std::filesystem::exists(projectDir)) {
@@ -36,4 +40,7 @@ AssemblyPipeline::AssemblyPipeline(const std::string &projectName)
     std::cerr << "Filesystem error: " << e.what() << std::endl;
     throw;
   }
+
+  assembler = *new Assembler();
+  linker = *new Linker();
 }

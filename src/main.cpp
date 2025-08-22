@@ -9,8 +9,8 @@ int main(int argc, char *argv[]) {
   if (argc > 2 && strcmp(argv[1], "-C") == 0) {
     AssemblyPipeline pipeline("new-project");
     for (int i = 2; i < argc; ++i) {
-      std::cout << "adicionando \"" << argv[i] << "\"...\n";
       pipeline.AddRawSource(argv[i]);
+      pipeline.Pass();
     }
     return 0;
   }
@@ -19,12 +19,6 @@ int main(int argc, char *argv[]) {
   VMEngine engine;
   VMState vm;
   VMStateSetup(vm);
-
-  Assembler *assembler = new Assembler();
-  std::vector<std::string> paths;
-  paths.push_back("./tests/test.asm");
-  paths.push_back("./tests/test2.asm");
-  assembler->CallAssembler(paths);
 
   Linker *linker = new Linker();
 
