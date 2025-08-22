@@ -1,3 +1,4 @@
+START MAIN
 INTDEF Pedro
 INTDEF Quadrado
 STACK 4

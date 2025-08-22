@@ -1,9 +1,10 @@
 #include "loader.hpp"
+
 #include <stdio.h>
 #include <stdlib.h>
 
-using RelocOffset = int16_t;
-using RelocFormat = int16_t;
+// using RelocOffset = int16_t;
+// using RelocFormat = int16_t;
 
 void Loader::ReadHPX(const std::filesystem::path &filePath) {
   std::ifstream in(filePath, std::ios::binary);
@@ -51,16 +52,23 @@ void Loader::ReadHPX(const std::filesystem::path &filePath) {
 
   // 4. Ler a tabela de relocação
   int16_t relocSize;
-  in.read(reinterpret_cast<char *>(&relocSize), sizeof(relocSize));
+  in.read(reinterpret_cast<char *>(&relocSize), sizeof(int16_t));
 
-  std::cout << "[Tabela de Relocação] (" << relocSize << " entradas)\n";
-  for (int32_t i = 0; i < relocSize; ++i) {
-    RelocOffset offset;
-    RelocFormat fmt;
-    in.read(reinterpret_cast<char *>(&offset), sizeof(offset));
-    in.read(reinterpret_cast<char *>(&fmt), sizeof(fmt));
-    std::cout << "  Offset: " << std::setw(4) << offset << " | Formato: " << fmt
-              << "\n";
+  for (int i = 0; i < relocSize; i++) {
+    int16_t offset;
+    int16_t fmt;
+    in.read(reinterpret_cast<char *>(&offset), sizeof(int16_t));
+    in.read(reinterpret_cast<char *>(&fmt), sizeof(int16_t));
+
+    if (fmt == 1) {
+      // Diretamente relocável → soma base
+      module.code[offset] += this->module.stackSize + 4;
+    } else {
+      // Indireto → soma no valor apontado e também no endereço
+      int16_t targetIndex = module.code[offset];
+      module.code[targetIndex] += this->module.stackSize + 4;
+      module.code[offset] += this->module.stackSize + 4;
+    }
   }
 
   std::cout << "\n--- Fim da Leitura ---\n";
@@ -70,18 +78,18 @@ void Loader::RelocateModule() {
   // realoca cada posição (com base no loadAddress)
   for (auto &[offset, fmt] : this->module.relocationTable) {
     switch (fmt) {
-    case OperandFormat::IMMEDIATE:
-      continue;
-    case OperandFormat::DIRECT:
-    case OperandFormat::INDIRECT: {
-      if (offset < 0 ||
-          offset >= static_cast<int16_t>(this->module.code.size())) {
-        throw std::out_of_range(
-            "Endereço de relocação fora dos limites do código");
+      case OperandFormat::IMMEDIATE:
+        continue;
+      case OperandFormat::DIRECT:
+      case OperandFormat::INDIRECT: {
+        if (offset < 0 ||
+            offset >= static_cast<int16_t>(this->module.code.size())) {
+          throw std::out_of_range(
+              "Endereço de relocação fora dos limites do código");
+        }
+        this->module.code[offset] += this->module.loadAddress;
+        continue;
       }
-      this->module.code[offset] += this->module.loadAddress;
-      continue;
-    }
     }
   }
 }
@@ -105,7 +113,8 @@ bool Loader::SetMemory(VMState &vm) {
 
   vm.memory[2] = this->module.stackSize;
   // vm.memory[1] = this->module.entryPoint;
-  vm.memory[this->module.stackSize + 3] = static_cast<int16_t>(56);
+  vm.memory[this->module.stackSize + 3] =
+      this->module.entryPoint + this->module.stackSize + 4;
 
   vm.memory[1] = this->module.stackSize + 3;
 

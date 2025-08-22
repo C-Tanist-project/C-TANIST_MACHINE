@@ -24,6 +24,9 @@ void Linker::Pass(const std::filesystem::path &projectFolder) {
 
   FirstPass(objFilePaths);
   SecondPass();
+  if (this->entryPoint == -1) {
+    std::cout << "Não existe módulo MAIN" << std::endl;
+  }
   GenerateOutput(outputPath);
   printModules();
 }
@@ -34,14 +37,12 @@ void Linker::GenerateOutput(const std::filesystem::path &outputPath) {
   outputFile = outputPath / fileName;
   std::ofstream out(outputFile, std::ios::binary);
 
-  if (!out)
-    throw std::runtime_error("Erro ao abrir " + fileName);
+  if (!out) throw std::runtime_error("Erro ao abrir " + fileName);
 
   const char magic[4] = {'H', 'P', 'X', '\0'};
   out.write(magic, sizeof(magic));
 
-  out.write(reinterpret_cast<char *>(&this->currentLoadAddress),
-            sizeof(int16_t));
+  out.write(reinterpret_cast<char *>(&this->entryPoint), sizeof(int16_t));
 
   out.write(reinterpret_cast<char *>(&this->globalStackSize), sizeof(int16_t));
 
@@ -95,6 +96,15 @@ void Linker::SecondPass() {
       continue;
     }
     std::copy(mod.code.begin(), mod.code.end(), linkedCode.begin() + start);
+
+    if (mod.startName == "MAIN") {  // testa redefinição
+      if (this->entryPoint == -1) {
+        this->entryPoint = start;
+      } else {
+        std::cout << "Erro: mais de um módulo MAIN" << std::endl;
+      }
+      // this->entryPoint = start + 1;
+    }
   }
 
   for (const auto &mod : modules) {
@@ -150,16 +160,16 @@ void Linker::FirstPass(const std::vector<std::string> &objFilePaths) {
       const OperandFormat format = reloc.second;
 
       switch (format) {
-      case IMMEDIATE:
-        break;
-      case DIRECT:
-      case INDIRECT:
-        mod.code[localIndex] += mod.loadAddress;
-        break;
-      default:
-        errors.push_back("Tipo de relocação desconhecido: " +
-                         std::to_string(static_cast<int>(format)));
-        break;
+        case IMMEDIATE:
+          break;
+        case DIRECT:
+        case INDIRECT:
+          mod.code[localIndex] += mod.loadAddress;
+          break;
+        default:
+          errors.push_back("Tipo de relocação desconhecido: " +
+                           std::to_string(static_cast<int>(format)));
+          break;
       }
 
       const int16_t globalIndex = localIndex + mod.loadAddress;
@@ -192,106 +202,106 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
     ObjSectionType section = static_cast<ObjSectionType>(rawType);
 
     switch (section) {
-    case ObjSectionType::NAME: {
-      int16_t nameLen;
-      objFile.read(reinterpret_cast<char *>(&nameLen), sizeof(int16_t));
+      case ObjSectionType::NAME: {
+        int16_t nameLen;
+        objFile.read(reinterpret_cast<char *>(&nameLen), sizeof(int16_t));
 
-      std::string name(nameLen, '\0');
-      objFile.read(&name[0], nameLen);
+        std::string name(nameLen, '\0');
+        objFile.read(&name[0], nameLen);
 
-      module.startName = name;
+        module.startName = name;
 
-      break;
-    }
-
-    case ObjSectionType::STACK_SIZE: {
-      objFile.read(reinterpret_cast<char *>(&module.stackSize),
-                   sizeof(int16_t));
-      globalStackSize += module.stackSize;
-      break;
-    }
-
-    case ObjSectionType::INTDEF: {
-      int16_t defCount;
-      objFile.read(reinterpret_cast<char *>(&defCount), sizeof(int16_t));
-
-      for (int i = 0; i < defCount; ++i) {
-        int16_t labelLen;
-        objFile.read(reinterpret_cast<char *>(&labelLen), sizeof(int16_t));
-
-        std::string label(labelLen, '\0');
-        objFile.read(&label[0], labelLen);
-
-        int16_t address;
-        objFile.read(reinterpret_cast<char *>(&address), sizeof(int16_t));
-
-        module.intDefTable[label] = address;
+        break;
       }
-      break;
-    }
 
-    case ObjSectionType::INTUSE: {
-      int16_t useCount;
-      objFile.read(reinterpret_cast<char *>(&useCount), sizeof(int16_t));
+      case ObjSectionType::STACK_SIZE: {
+        objFile.read(reinterpret_cast<char *>(&module.stackSize),
+                     sizeof(int16_t));
+        globalStackSize += module.stackSize;
+        break;
+      }
 
-      for (int i = 0; i < useCount; ++i) {
-        int16_t labelLen;
-        objFile.read(reinterpret_cast<char *>(&labelLen), sizeof(int16_t));
+      case ObjSectionType::INTDEF: {
+        int16_t defCount;
+        objFile.read(reinterpret_cast<char *>(&defCount), sizeof(int16_t));
 
-        std::string label(labelLen, '\0');
-        objFile.read(&label[0], labelLen);
+        for (int i = 0; i < defCount; ++i) {
+          int16_t labelLen;
+          objFile.read(reinterpret_cast<char *>(&labelLen), sizeof(int16_t));
 
-        int16_t addrCount;
-        objFile.read(reinterpret_cast<char *>(&addrCount), sizeof(int16_t));
+          std::string label(labelLen, '\0');
+          objFile.read(&label[0], labelLen);
 
-        std::vector<int16_t> addresses(addrCount);
-        for (int j = 0; j < addrCount; ++j) {
-          int16_t addr;
-          objFile.read(reinterpret_cast<char *>(&addr), sizeof(int16_t));
-          addresses[j] = addr;
+          int16_t address;
+          objFile.read(reinterpret_cast<char *>(&address), sizeof(int16_t));
+
+          module.intDefTable[label] = address;
         }
-        module.intUseTable[label] = std::move(addresses);
+        break;
       }
-      break;
-    }
 
-    case ObjSectionType::CODE: {
-      int16_t codeSize;
-      objFile.read(reinterpret_cast<char *>(&codeSize), sizeof(int16_t));
-      module.code.resize(codeSize);
-      objFile.read(reinterpret_cast<char *>(module.code.data()),
-                   codeSize * sizeof(int16_t));
-      break;
-    }
+      case ObjSectionType::INTUSE: {
+        int16_t useCount;
+        objFile.read(reinterpret_cast<char *>(&useCount), sizeof(int16_t));
 
-    case ObjSectionType::RELOCATION: {
-      int16_t relocCount;
-      objFile.read(reinterpret_cast<char *>(&relocCount), sizeof(int16_t));
+        for (int i = 0; i < useCount; ++i) {
+          int16_t labelLen;
+          objFile.read(reinterpret_cast<char *>(&labelLen), sizeof(int16_t));
 
-      for (int i = 0; i < relocCount; ++i) {
-        int16_t address;
-        int16_t typeVal;
+          std::string label(labelLen, '\0');
+          objFile.read(&label[0], labelLen);
 
-        objFile.read(reinterpret_cast<char *>(&address), sizeof(int16_t));
-        objFile.read(reinterpret_cast<char *>(&typeVal), sizeof(int16_t));
+          int16_t addrCount;
+          objFile.read(reinterpret_cast<char *>(&addrCount), sizeof(int16_t));
 
-        module.relocationTable[address] = static_cast<OperandFormat>(typeVal);
+          std::vector<int16_t> addresses(addrCount);
+          for (int j = 0; j < addrCount; ++j) {
+            int16_t addr;
+            objFile.read(reinterpret_cast<char *>(&addr), sizeof(int16_t));
+            addresses[j] = addr;
+          }
+          module.intUseTable[label] = std::move(addresses);
+        }
+        break;
       }
-      break;
-    }
 
-    case ObjSectionType::END: {
-      finished = true;
-      break;
-    }
+      case ObjSectionType::CODE: {
+        int16_t codeSize;
+        objFile.read(reinterpret_cast<char *>(&codeSize), sizeof(int16_t));
+        module.code.resize(codeSize);
+        objFile.read(reinterpret_cast<char *>(module.code.data()),
+                     codeSize * sizeof(int16_t));
+        break;
+      }
 
-    default: {
-      errors.push_back("Seção desconhecida no arquivo: " + filePath +
-                       " (tipo " + std::to_string(static_cast<int>(section)) +
-                       ")");
-      finished = true;
-      break;
-    }
+      case ObjSectionType::RELOCATION: {
+        int16_t relocCount;
+        objFile.read(reinterpret_cast<char *>(&relocCount), sizeof(int16_t));
+
+        for (int i = 0; i < relocCount; ++i) {
+          int16_t address;
+          int16_t typeVal;
+
+          objFile.read(reinterpret_cast<char *>(&address), sizeof(int16_t));
+          objFile.read(reinterpret_cast<char *>(&typeVal), sizeof(int16_t));
+
+          module.relocationTable[address] = static_cast<OperandFormat>(typeVal);
+        }
+        break;
+      }
+
+      case ObjSectionType::END: {
+        finished = true;
+        break;
+      }
+
+      default: {
+        errors.push_back("Seção desconhecida no arquivo: " + filePath +
+                         " (tipo " + std::to_string(static_cast<int>(section)) +
+                         ")");
+        finished = true;
+        break;
+      }
     }
   }
 

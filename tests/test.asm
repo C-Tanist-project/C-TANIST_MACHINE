@@ -1,21 +1,23 @@
-INTDEF Alves
-INTDEF Bernardo
-Quadrado INTUSE
-Helida INTUSE
-STACK 6
-ADD Caio
-Caio SUB #10
-ADD @3
-COPY Quadrado Dorival
-ADD Helida
-SUB Quadrado
-BR Estela
-BR Felipe,I
-DIVIDE Gustavo
-Alves SPACE
-Bernardo CONST 5
-Dorival SPACE
-Estela CONST 1
-Felipe SPACE
-Gustavo SPACE
+START MAIN
+INTDEF BIAS
+INTDEF SCALE
+OffAdScl INTUSE
+STACK 8
+
+READ X
+BRNEG FazZero
+
+BR CHAMA
+
+FazZero LOAD #0
+
+CHAMA CALL OffAdScl
+STORE Y
+WRITE Y
+STOP
+
+X SPACE
+Y SPACE
+BIAS CONST 3
+SCALE CONST 2
 END
