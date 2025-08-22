@@ -109,8 +109,8 @@ AssemblingStatus Assembler::FirstPass() {
         return buildError(lineCounter, instruction.label, SYMBOL_REDEFINITION);
       }
       defSymData.defined =
-          true; // Simbolo definido na tabela de definições não significa que
-                // foi definido na tabela de símbolos
+          true;  // Simbolo definido na tabela de definições não significa que
+                 // foi definido na tabela de símbolos
       defSymData.address = UNRESOLVED_ADDRESS;
       defSymData.line = lineCounter;
       continue;
@@ -470,17 +470,17 @@ AssemblingStatus Assembler::SecondPass() {
             }
             int16_t address;
             std::string addressToLst;
-            if (operand[0] == '@') { // literal
+            if (operand[0] == '@') {  // literal
               address = literalTable[operand].address;
               addressToLst = std::to_string(literalTable[operand].address);
               relocationTable.emplace(static_cast<int16_t>(objectCode.size()),
                                       OperandFormat::DIRECT);
-            } else if (symbolTable.contains(operand)) { // símbolo local
+            } else if (symbolTable.contains(operand)) {  // símbolo local
               address = symbolTable[operand].address;
               addressToLst = std::to_string(symbolTable[operand].address);
               relocationTable.emplace(static_cast<int16_t>(objectCode.size()),
                                       OperandFormat::DIRECT);
-            } else { // símbolo definido em outro módulo
+            } else {  // símbolo definido em outro módulo
               address = 0;
               addressToLst = "0";
               intUseTable[operand].push_back(objectCode.size());
@@ -601,7 +601,7 @@ void Assembler::WriteObjectCodeFile() {
 
   for (const auto &[address, type] : this->relocationTable) {
     objFile.write(reinterpret_cast<const char *>(&address), sizeof(int16_t));
-    int16_t typeVal = static_cast<int16_t>(type); // DIRECT ou INDIRECT
+    int16_t typeVal = static_cast<int16_t>(type);  // DIRECT ou INDIRECT
     objFile.write(reinterpret_cast<const char *>(&typeVal), sizeof(int16_t));
   }
 
@@ -613,7 +613,6 @@ void Assembler::WriteObjectCodeFile() {
 
 // escreve o arquivo .lst com this->listingLines e this->listingErrors
 void Assembler::WriteListingFile() {
-
   std::ofstream lstFile(this->lstFilePath);
 
   if (!lstFile.is_open()) {
@@ -653,6 +652,7 @@ AssemblingStatus Assembler::buildError(int16_t line, const std::string &token,
 void Assembler::ResetAssembler() {
   locationCounter = 0;
   lineCounter = 0;
+  moduleName = "";
   objectCode.clear();
   listingLines.clear();
   intDefTable.clear();

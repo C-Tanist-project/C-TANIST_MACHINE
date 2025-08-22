@@ -7,7 +7,7 @@
 #include "types.hpp"
 
 class Linker {
-private:
+ private:
   struct Module {
     std::string startName;
     std::string name;
@@ -24,9 +24,10 @@ private:
     std::vector<int16_t> globalCode;
     std::unordered_map<int16_t, OperandFormat> globalRelocationTable;
     int16_t globalStackSize = 0;
-    int16_t entryPoint = 0;
+    // int16_t entryPoint = 0;
   };
 
+  int16_t entryPoint = -1;
   std::vector<Module> modules;
   GlobalModule globalModule;
 
@@ -42,7 +43,7 @@ private:
   void SecondPass();
   void GenerateOutput(const std::filesystem::path &outputPath);
 
-public:
+ public:
   Linker();
   void FirstPass(const std::vector<std::string> &objFilePaths);
   void ReadObjectCodeFile(const std::string &filePath);
