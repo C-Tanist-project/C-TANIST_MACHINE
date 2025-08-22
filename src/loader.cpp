@@ -60,7 +60,7 @@ void Loader::ReadHPX(const std::filesystem::path &filePath) {
     in.read(reinterpret_cast<char *>(&offset), sizeof(int16_t));
     in.read(reinterpret_cast<char *>(&fmt), sizeof(int16_t));
 
-    if (fmt == 0) {
+    if (fmt == 1) {
       // Diretamente relocável → soma base
       module.code[offset] += this->module.stackSize + 4;
     } else {
