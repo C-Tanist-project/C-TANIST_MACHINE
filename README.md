@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/C-Tanist-project/C-TANIST_MACHINE/bdcd00b156e7e0f84975cc284f1859e1dce37953/assets/pentacle.svg">
+  <img src="https://raw.githubusercontent.com/C-Tanist-project/C-TANIST_MACHINE/refs/heads/main/assets/pentacle.svg">
   <p align="center">
       <img src="https://img.shields.io/github/license/C-Tanist-project/C-TANIST_MACHINE?style=for-the-badge&color=%23DE002B">
       <img src="https://img.shields.io/github/contributors/C-Tanist-project/C-TANIST_MACHINE?style=for-the-badge&color=%23DE002B">
