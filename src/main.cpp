@@ -26,9 +26,15 @@ int main(int argc, char *argv[]) {
   std::vector<std::string> paths;
   paths.push_back("./tests/test.asm");
   paths.push_back("./tests/test2.asm");
-  assembler->NotifyAssembling(paths);
+  assembler->CallAssembler(paths);
 
   Linker *linker = new Linker;
+  std::vector<std::string> objPaths;
+  objPaths.push_back("./obj/test.obj");
+  objPaths.push_back("./obj/test2.obj");
+  objPaths.push_back("./obj/test4.obj");
+  linker->ReadObjectCodeFile("./obj/test4.obj");
+  linker->printModules();
 
   std::vector<std::string> objPaths;
   objPaths.push_back("./obj/test.obj");
