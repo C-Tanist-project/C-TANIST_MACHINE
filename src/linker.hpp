@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -6,7 +7,7 @@
 #include "types.hpp"
 
 class Linker {
- private:
+private:
   struct Module {
     std::string startName;
     std::string name;
@@ -19,23 +20,32 @@ class Linker {
     int16_t loadAddress = 0;
   };
 
+  struct GlobalModule {
+    std::vector<int16_t> globalCode;
+    std::unordered_map<int16_t, OperandFormat> globalRelocationTable;
+    int16_t globalStackSize = 0;
+    int16_t entryPoint = 0;
+  };
+
   std::vector<Module> modules;
+  GlobalModule globalModule;
 
   std::unordered_map<std::string, std::pair<int16_t, std::string>>
       globalSymbolTable;
   std::vector<std::string> errors;
+  std::string globalName;
   int16_t globalStackSize = 0;
   int16_t currentLoadAddress = 0;
   std::vector<int16_t> linkedCode;
   std::unordered_map<int16_t, OperandFormat> globalRelocationTable;
 
   void SecondPass();
-  void GenerateOutput(const std::string& outputName);
+  void GenerateOutput(const std::filesystem::path &outputPath);
 
- public:
+public:
   Linker();
-  void FirstPass(const std::vector<std::string>& objFilePaths);
-  void ReadObjectCodeFile(const std::string& filePath);
+  void FirstPass(const std::vector<std::string> &objFilePaths);
+  void ReadObjectCodeFile(const std::string &filePath);
   void printModules();
-  void Link(const std::vector<std::string>& objFilePaths);
+  void Pass(const std::filesystem::path &projectFolder);
 };

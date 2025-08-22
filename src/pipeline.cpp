@@ -1,7 +1,11 @@
 #include "pipeline.hpp"
 #include <filesystem>
 
-void AssemblyPipeline::Pass(void) { assembler.Pass(this->projectPath); }
+void AssemblyPipeline::Pass(void) {
+  assembler.Pass(this->projectPath);
+  linker.Pass(this->projectPath);
+  loader.Pass(this->projectPath);
+}
 
 bool AssemblyPipeline::AddRawSource(const std::string &filePath) {
   this->rawSourceFiles.push_back(filePath);
@@ -43,4 +47,5 @@ AssemblyPipeline::AssemblyPipeline(const std::string &projectName)
 
   assembler = *new Assembler();
   linker = *new Linker();
+  loader = *new Loader();
 }

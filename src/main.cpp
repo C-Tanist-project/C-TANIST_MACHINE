@@ -10,8 +10,8 @@ int main(int argc, char *argv[]) {
     AssemblyPipeline pipeline("new-project");
     for (int i = 2; i < argc; ++i) {
       pipeline.AddRawSource(argv[i]);
-      pipeline.Pass();
     }
+    pipeline.Pass();
     return 0;
   }
 
@@ -19,13 +19,6 @@ int main(int argc, char *argv[]) {
   VMEngine engine;
   VMState vm;
   VMStateSetup(vm);
-
-  Linker *linker = new Linker();
-
-  std::vector<std::string> objPaths;
-  objPaths.push_back(".project/obj/test.obj");
-  objPaths.push_back(".project/obj/test2.obj");
-  linker->FirstPass(objPaths);
 
   std::thread engineThread(&VMEngine::Run, &engine, std::ref(vm));
 
