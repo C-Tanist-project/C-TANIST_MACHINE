@@ -13,6 +13,7 @@ srcs = ['src/main.cpp',
         'src/linker.cpp',
         'src/loader.cpp',
         'src/preprocessor.cpp',
+        'src/windows/text_editor.cpp',
         'src/pipeline.cpp']
 
 imgui_compiled_options = ['opengl=enabled',
