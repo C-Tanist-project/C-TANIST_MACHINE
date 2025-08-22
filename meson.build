@@ -46,6 +46,9 @@ if not imgui_lib.found()
   imgui_lib = imgui_proj.get_variable('imgui_dep')
 endif
 
-deps = [glfw_lib, imgui_lib]
+cpp = meson.get_compiler('cpp')
+fs_dep = cpp.find_library('stdc++fs', required: false)
+
+deps = [glfw_lib, imgui_lib, fs_dep]
 
 executable('pentacle', sources: srcs, dependencies: deps, install: true)
