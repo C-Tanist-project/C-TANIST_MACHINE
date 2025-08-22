@@ -59,7 +59,6 @@ void Linker::GenerateOutput(const std::filesystem::path &outputPath) {
 }
 
 void Linker::SecondPass() {
-
   linkedCode.clear();
   globalRelocationTable.clear();
 
@@ -193,28 +192,22 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
     ObjSectionType section = static_cast<ObjSectionType>(rawType);
 
     switch (section) {
-    case ObjSectionType::STACK_SIZE: {
-      objFile.read(reinterpret_cast<char *>(&module.stackSize),
-                   sizeof(int16_t));
-      globalStackSize += module.stackSize;
-      break;
-    }
+      case ObjSectionType::NAME: {
+        int16_t nameLen;
+        objFile.read(reinterpret_cast<char *>(&nameLen), sizeof(int16_t));
 
-    case ObjSectionType::INTDEF: {
-      int16_t defCount;
-      objFile.read(reinterpret_cast<char *>(&defCount), sizeof(int16_t));
+        std::string name(nameLen, '\0');
+        objFile.read(&name[0], nameLen);
 
-      for (int i = 0; i < defCount; ++i) {
-        int16_t labelLen;
-        objFile.read(reinterpret_cast<char *>(&labelLen), sizeof(int16_t));
+        module.startName = name;
 
-        std::string label(labelLen, '\0');
-        objFile.read(&label[0], labelLen);
-
-        int16_t address;
-        objFile.read(reinterpret_cast<char *>(&address), sizeof(int16_t));
-
-        module.intDefTable[label] = address;
+        break;
+      }
+      case ObjSectionType::STACK_SIZE: {
+        objFile.read(reinterpret_cast<char *>(&module.stackSize),
+                     sizeof(int16_t));
+        globalStackSize += module.stackSize;
+        break;
       }
       break;
     }
@@ -290,7 +283,7 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
 void Linker::printModules() {
   for (const auto &mod : modules) {
     std::cout << "Module Name: " << mod.name << "\n";
-
+    std::cout << "Program Name (start): " << mod.startName << "\n";
     std::cout << "Code: ";
     for (const auto &val : mod.code) {
       std::cout << val << " ";

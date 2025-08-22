@@ -65,6 +65,7 @@ private:
 
   int locationCounter;
   int lineCounter;
+  std::string moduleName;
   AssemblingStatus assemblingStatus;
 
   // AssemblerExitCode finalExitCode;

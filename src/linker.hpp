@@ -9,6 +9,7 @@
 class Linker {
 private:
   struct Module {
+    std::string startName;
     std::string name;
     std::vector<int16_t> code;
     std::unordered_map<std::string, int16_t> intDefTable;
