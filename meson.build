@@ -1,7 +1,19 @@
 project('pentacle', 'cpp', 'c',
   default_options : ['cpp_std=c++23'])
 
-srcs = ['src/main.cpp', 'src/ui.cpp', 'src/vm.cpp', 'src/windows/memory_editor.cpp', 'src/windows/controls.cpp', 'src/windows/console.cpp', 'src/external/ImGuiFileDialog.cpp', 'src/windows/vmstate.cpp', 'src/assembler.cpp', 'src/linker.cpp', 'src/preprocessor.cpp', 'src/windows/text_editor.cpp']
+srcs = ['src/main.cpp',
+        'src/ui.cpp',
+        'src/vm.cpp',
+        'src/windows/memory_editor.cpp',
+        'src/windows/controls.cpp',
+        'src/windows/console.cpp',
+        'src/external/ImGuiFileDialog.cpp',
+        'src/windows/vmstate.cpp',
+        'src/assembler.cpp',
+        'src/linker.cpp',
+        'src/loader.cpp',
+        'src/preprocessor.cpp',
+        'src/pipeline.cpp']
 
 imgui_compiled_options = ['opengl=enabled',
                           'glfw=enabled',
@@ -33,6 +45,9 @@ if not imgui_lib.found()
   imgui_lib = imgui_proj.get_variable('imgui_dep')
 endif
 
-deps = [glfw_lib, imgui_lib]
+cpp = meson.get_compiler('cpp')
+fs_dep = cpp.find_library('stdc++fs', required: false)
+
+deps = [glfw_lib, imgui_lib, fs_dep]
 
 executable('pentacle', sources: srcs, dependencies: deps, install: true)

@@ -1,4 +1,5 @@
 build/
+.cache/
 .ccls-cache
 .clang-format
 .clangd
@@ -7,6 +8,12 @@ compile_commands.json
 *.ini
 *.exe
 *.obj
+*.OBJ
+*.LST
+*.ASM
+*.asm
+*.HPX
+*.hpx
 *.lst
 subprojects/glfw-*
 subprojects/imgui-*

@@ -1,27 +1,26 @@
 #include <cstring>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
 #include <thread>
 
-#include "assembler.hpp"
-#include "imgui.h"
-#include "linker.hpp"
-#include "preprocessor.hpp"
+#include "pipeline.hpp"
 #include "ui.hpp"
 #include "vm.hpp"
 
 int main(int argc, char *argv[]) {
-  if (argc > 1 && strcmp(argv[1], "preprocess") == 0) {
-    MacroProcessor macross(argv[2]);
-    macross.Pass();
-    return 0;
+  AssemblyPipeline pipeline("new-project");
+
+  if (argc > 2 && strcmp(argv[1], "-C") == 0) {
+    for (int i = 2; i < argc; ++i) {
+      pipeline.AddRawSource(argv[i]);
+    }
+    pipeline.Pass();
   }
+
   Operations::InitializeMap();
   VMEngine engine;
   VMState vm;
-
   VMStateSetup(vm);
+
+  pipeline.SetMemory(vm);
 
   std::thread engineThread(&VMEngine::Run, &engine, std::ref(vm));
 

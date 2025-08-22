@@ -68,6 +68,7 @@ typedef enum {
 } AssemblerExitCode;
 
 enum class ObjSectionType : int16_t {
+  NAME = 0x00,
   STACK_SIZE = 0x01,
   INTDEF = 0x02,
   INTUSE = 0x03,
