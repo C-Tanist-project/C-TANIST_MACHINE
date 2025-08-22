@@ -54,17 +54,21 @@ typedef enum {
 } Opcode;
 
 typedef enum {
-  SUCCESS = 0,        // DEU BOM!
-  INVALID_CHARACTER,  // lexema inválido (só vale ASCII? qq o ferrugem quer?)
-  LINE_OVER_80_CHARACTERS,  // linha muito longa (+80 chars)
-  INVALID_DIGIT,        // caracter inválido para a base escolhida (ex: "2" bin)
-  UNEXPECTED_EOL,       // delimitador de fim de instrução inválido
-  OUT_OF_BOUNDS,        // valor maior do que cabe em int16_t
-  SYNTAX_ERROR,         // falta/excesso de operandos, label mal formada
-  SYMBOL_REDEFINITION,  // referência simbólica com mais de uma definição
-  SYMBOL_UNDEFINED,     // referência simbólica não definida
-  INVALID_INSTRUCTION,  // mnemônico não corresponde a nenhuma instrução
-  NO_END,               // faltou "END" no programa
+  SUCCESS = 0,
+  INVALID_CHARACTER,
+  LINE_OVER_80_CHARACTERS,
+  INVALID_DIGIT,
+  UNEXPECTED_EOL,
+  OUT_OF_BOUNDS,
+  SYNTAX_ERROR,
+  SYMBOL_REDEFINITION,
+  SYMBOL_UNDEFINED,
+  INVALID_INSTRUCTION,
+  //
+  INVALID_OPERAND,
+  //
+  NO_END,
+  NO_MAIN,
 } AssemblerExitCode;
 
 enum class ObjSectionType : int16_t {
@@ -76,3 +80,9 @@ enum class ObjSectionType : int16_t {
   RELOCATION = 0x05,
   END = 0xFF
 };
+
+typedef struct assemblerLinkerError {
+  AssemblerExitCode codError;
+  int whereError;  // Assembler ou Linker
+  std::string moduleName;
+} assemblerLinkerError;

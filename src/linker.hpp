@@ -20,17 +20,18 @@ class Linker {
     int16_t loadAddress = 0;
   };
 
-  struct GlobalModule {
-    std::vector<int16_t> globalCode;
-    std::unordered_map<int16_t, OperandFormat> globalRelocationTable;
-    int16_t globalStackSize = 0;
-    // int16_t entryPoint = 0;
-  };
+  // struct GlobalModule {
+  //   std::vector<int16_t> globalCode;
+  //   std::unordered_map<int16_t, OperandFormat> globalRelocationTable;
+  //   int16_t globalStackSize = 0;
+  //   // int16_t entryPoint = 0;
+  // };
 
   int16_t entryPoint = -1;
   std::vector<Module> modules;
-  GlobalModule globalModule;
+  // GlobalModule globalModule;
 
+  assemblerLinkerError linkerError;
   std::unordered_map<std::string, std::pair<int16_t, std::string>>
       globalSymbolTable;
   std::vector<std::string> errors;
@@ -48,5 +49,5 @@ class Linker {
   void FirstPass(const std::vector<std::string> &objFilePaths);
   void ReadObjectCodeFile(const std::string &filePath);
   void printModules();
-  void Pass(const std::filesystem::path &projectFolder);
+  assemblerLinkerError Pass(const std::filesystem::path &projectFolder);
 };

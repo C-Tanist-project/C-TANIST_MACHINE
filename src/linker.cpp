@@ -10,7 +10,7 @@
 
 Linker::Linker() {}
 
-void Linker::Pass(const std::filesystem::path &projectFolder) {
+assemblerLinkerError Linker::Pass(const std::filesystem::path &projectFolder) {
   std::filesystem::path inputPath = projectFolder / "OBJ";
   std::filesystem::path outputPath = projectFolder / "HPX";
 
@@ -21,14 +21,23 @@ void Linker::Pass(const std::filesystem::path &projectFolder) {
       objFilePaths.push_back(entry.path());
     }
   }
-
+  this->linkerError.codError = SUCCESS;
   FirstPass(objFilePaths);
+  if (this->linkerError.codError != SUCCESS) {
+    return this->linkerError;
+  }
   SecondPass();
   if (this->entryPoint == -1) {
-    std::cout << "Não existe módulo MAIN" << std::endl;
+    this->linkerError;
+    this->linkerError.codError = NO_MAIN;
+    this->linkerError.moduleName = "";
+    this->linkerError.whereError = 1;
+    return this->linkerError;
   }
   GenerateOutput(outputPath);
   printModules();
+
+  return this->linkerError;
 }
 
 void Linker::GenerateOutput(const std::filesystem::path &outputPath) {
@@ -137,14 +146,22 @@ void Linker::FirstPass(const std::vector<std::string> &objFilePaths) {
     for (const auto &[symbol, address] : mod.intDefTable) {
       int16_t relocatedAddr = address + mod.loadAddress;
       if (globalSymbolTable.contains(symbol)) {
-        errors.push_back("Símbolo " + symbol + " já definido globalmente.");
+        // errors.push_back("Símbolo " + symbol + " já definido globalmente.");
+        this->linkerError.codError = SYMBOL_REDEFINITION;
+        this->linkerError.moduleName = mod.name;
+        this->linkerError.whereError = 1;
+        return;
       } else {
         globalSymbolTable[symbol] = {relocatedAddr, mod.name};
       }
     }
     for (auto &[symbol, positions] : mod.intUseTable) {
       if (!globalSymbolTable.contains(symbol)) {
-        errors.push_back("Símbolo " + symbol + " não definido globalmente.");
+        // errors.push_back("Símbolo " + symbol + " não definido globalmente.");
+        this->linkerError.codError = SYMBOL_UNDEFINED;
+        this->linkerError.moduleName = mod.name;
+        this->linkerError.whereError = 1;
+        return;
       } else {
         for (auto &pos : positions) {
           pos += mod.loadAddress;

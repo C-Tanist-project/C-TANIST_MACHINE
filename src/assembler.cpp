@@ -17,6 +17,7 @@ std::unordered_map<AssemblerExitCode, std::string> errorMessages = {
     {SYMBOL_REDEFINITION, "Símbolo redefinido"},
     {SYMBOL_UNDEFINED, "Símbolo indefinido"},
     {INVALID_INSTRUCTION, "Instrução inválida"},
+    {INVALID_OPERAND, "Número de operandos incorreto para instrução"},
     {NO_END, "Faltou END no programa"},
 };
 
@@ -38,7 +39,6 @@ void Assembler::Assemble(const std::string &asmFilePath,
   ResetAssembler();
   this->assemblingStatus = FirstPass();
   if (this->assemblingStatus.exitCode == SUCCESS) {
-    std::cout << "Primeiro passo fucnional" << std::endl;
     this->assemblingStatus = SecondPass();
   }
   WriteObjectCodeFile();
@@ -91,7 +91,7 @@ AssemblingStatus Assembler::FirstPass() {
     if (mnemonic == "INTUSE") {
       if (instruction.label.empty()) {
         return buildError(lineCounter, mnemonic,
-                          SYNTAX_ERROR);  // INTUSE ERROR (ter que mudar)
+                          INVALID_OPERAND);  // INVALID_OPERAND
       }
       intUseTable[instruction.label] = {};
       continue;
@@ -100,7 +100,7 @@ AssemblingStatus Assembler::FirstPass() {
     if (mnemonic == "INTDEF") {
       if (instruction.operands.size() != 1) {
         return buildError(lineCounter, instruction.operands[0],
-                          SYNTAX_ERROR);  // INTDEF ERROR (ter que mudar)
+                          INVALID_OPERAND);  // INVALID_OPERAND
       }
 
       const std::string &symbol = instruction.operands[0];
@@ -141,8 +141,7 @@ AssemblingStatus Assembler::FirstPass() {
             lineCounter, mnemonic,
             SYMBOL_REDEFINITION);  // Erro de múltiplos START (ter que mudar)
       } else if (instruction.operands.size() != 1) {
-        return buildError(lineCounter, mnemonic,
-                          SYNTAX_ERROR);  // Falta operando no START
+        return buildError(lineCounter, mnemonic, INVALID_OPERAND);
       } else if (foundEnd) {
         return buildError(lineCounter, mnemonic,
                           SYNTAX_ERROR);  // erro de start dps do end
@@ -158,39 +157,40 @@ AssemblingStatus Assembler::FirstPass() {
     } else if (mnemonic == "CONST") {
       if (instruction.operands.size() != 1) {
         return buildError(lineCounter, mnemonic,
-                          SYNTAX_ERROR);  // Const sem operando
+                          INVALID_OPERAND);  // Const sem operando
       }
       locationCounter += 1;
 
     } else if (mnemonic == "SPACE") {
       if (instruction.operands.size() < 0 || instruction.operands.size() > 2) {
-        return buildError(lineCounter, mnemonic, SYNTAX_ERROR);
+        return buildError(lineCounter, mnemonic, INVALID_OPERAND);
       }
       locationCounter += 1;
 
     } else if (mnemonic == "STACK") {
       if (instruction.operands.size() != 1) {
         return buildError(lineCounter, mnemonic,
-                          SYNTAX_ERROR);  // STACK sem operando
+                          INVALID_OPERAND);  // STACK sem operando
       }
 
     } else if (opcodes.contains(mnemonic)) {
       if (mnemonic == "COPY") {
         if (instruction.operands.size() != 2) {
           return buildError(lineCounter, mnemonic,
-                            SYNTAX_ERROR);  // Faltando operandos em COPY
+                            INVALID_OPERAND);  // Faltando operandos em COPY
         }
         locationCounter += 3;
       } else if (mnemonic == "RET" || mnemonic == "STOP") {
         if (instruction.operands.size() > 0) {
-          return buildError(lineCounter, mnemonic,
-                            SYNTAX_ERROR);  // Muitos operandos em RET ou STOP
+          return buildError(
+              lineCounter, mnemonic,
+              INVALID_OPERAND);  // Muitos operandos em RET ou STOP
         }
         locationCounter += 1;
       } else {
         if (instruction.operands.size() != 1) {
           return buildError(lineCounter, mnemonic,
-                            SYNTAX_ERROR);  // Agora sim isso tá certo
+                            INVALID_OPERAND);  // Agora sim isso tá certo
         }
         locationCounter += 2;
       }
@@ -213,7 +213,7 @@ AssemblingStatus Assembler::FirstPass() {
         if (digits.empty() ||
             !std::all_of(digits.begin(), digits.end(), ::isdigit)) {
           return buildError(lineCounter, operand,
-                            SYNTAX_ERROR);  // Literal sem número
+                            INVALID_DIGIT);  // Literal sem número
         }
 
         auto &literalData = literalTable[operand];
@@ -281,16 +281,14 @@ ParseResult Assembler::ParseLine(const std::string &line, int lineNumber) {
   std::string firstWord = line.substr(start, idx - start);
 
   if (assemblerInstructions.contains(firstWord)) {
-    // É um mnemonico -> não tem label
     result.instruction.mnemonic = firstWord;
   } else {
-    // Pode ser label
     static const std::regex labelRegex(R"([A-Za-z_][A-Za-z0-9_]{0,7})");
 
     if (!std::regex_match(firstWord, labelRegex)) {
-      result.lineStatus = buildError(
-          lineNumber, firstWord,
-          LINE_OVER_80_CHARACTERS);  // Verificar se esse erro é esse erro mesmo
+      result.lineStatus =
+          buildError(lineNumber, firstWord,
+                     SYNTAX_ERROR);  // Verificar se esse erro é esse erro mesmo
       return result;
     }
     result.instruction.label = firstWord;
@@ -300,7 +298,7 @@ ParseResult Assembler::ParseLine(const std::string &line, int lineNumber) {
     if (idx >= line.size()) {
       result.lineStatus = buildError(
           lineNumber, firstWord,
-          LINE_OVER_80_CHARACTERS);  // Verificar se esse erro é esse erro mesmo
+          INVALID_INSTRUCTION);  // Verificar se esse erro é esse erro mesmo
       return result;
     }
     size_t opStart = idx;
@@ -331,7 +329,7 @@ ParseResult Assembler::ParseLine(const std::string &line, int lineNumber) {
   if (result.instruction.operands.size() > 2) {
     result.lineStatus = buildError(
         lineNumber, firstWord,
-        LINE_OVER_80_CHARACTERS);  // Verificar se esse erro é esse erro mesmo
+        INVALID_OPERAND);  // Verificar se esse erro é esse erro mesmo
     return result;
   }
 
@@ -406,8 +404,9 @@ AssemblingStatus Assembler::SecondPass() {
 
           if (opcode == "PUSH" || opcode == "POP") {
             if (!regs.contains(operand)) {
-              status = buildError(lineCounter, operand,
-                                  SYNTAX_ERROR);  // erro de operando inválido
+              status =
+                  buildError(lineCounter, operand,
+                             INVALID_OPERAND);  // erro de operando inválido
               return;
             }
             objectCode.push_back(regs.at(operand));
@@ -441,9 +440,7 @@ AssemblingStatus Assembler::SecondPass() {
               return;
             }
             if (opcode == "COPY" && whichOne == 32) {
-              status = buildError(
-                  lineCounter, operand,
-                  INVALID_CHARACTER);  // verificar se esse erro é o certo
+              status = buildError(lineCounter, operand, INVALID_CHARACTER);
               return;
             }
             finalOpCode += 128;
@@ -663,7 +660,7 @@ void Assembler::ResetAssembler() {
   relocationTable.clear();
 }
 
-void Assembler::Pass(std::filesystem::path &projectFolder) {
+assemblerLinkerError Assembler::Pass(std::filesystem::path &projectFolder) {
   std::filesystem::path inputPath = projectFolder / "ASM";
   std::filesystem::path outputPath = projectFolder / "OBJ";
   std::filesystem::path listingPath = projectFolder / "LST";
@@ -675,6 +672,18 @@ void Assembler::Pass(std::filesystem::path &projectFolder) {
       Assemble(currentFile,
                outputPath / currentFile.filename().replace_extension(".OBJ"),
                listingPath / currentFile.filename().replace_extension(".LST"));
+
+      if (this->assemblingStatus.exitCode != SUCCESS) {
+        assemblerLinkerError error;
+        error.codError = this->assemblingStatus.exitCode;
+        error.moduleName = currentFile.filename();
+        error.whereError = 0;
+        return error;
+      }
     }
   }
+
+  assemblerLinkerError success;
+  success.codError = SUCCESS;
+  return success;
 }
