@@ -148,6 +148,7 @@ AssemblingStatus Assembler::FirstPass() {
                           SYNTAX_ERROR);  // erro de start dps do end
       } else {
         foundStart = true;
+        this->moduleName = instruction.operands[0];
       }
 
     } else if (mnemonic == "END") {
@@ -535,6 +536,14 @@ void Assembler::WriteObjectCodeFile() {
               << this->objFilePath << std::endl;
   }
 
+  // NAME
+  int16_t nameSection = static_cast<int16_t>(ObjSectionType::NAME);
+  objFile.write(reinterpret_cast<const char *>(&nameSection), sizeof(int16_t));
+
+  int16_t nameLen = static_cast<int16_t>(this->moduleName.size());
+  objFile.write(reinterpret_cast<const char *>(&nameLen), sizeof(int16_t));
+  objFile.write(this->moduleName.data(), nameLen);
+
   // STACK_SIZE
   int16_t _stackSizeSection = static_cast<int16_t>(ObjSectionType::STACK_SIZE);
   objFile.write(reinterpret_cast<const char *>(&_stackSizeSection),
@@ -583,7 +592,7 @@ void Assembler::WriteObjectCodeFile() {
   objFile.write(reinterpret_cast<const char *>(this->objectCode.data()),
                 this->objectCode.size() * sizeof(int16_t));
 
-  // RELOCATION (nova seção)
+  // RELOCATION
   int16_t relocationSection = static_cast<int16_t>(ObjSectionType::RELOCATION);
   objFile.write(reinterpret_cast<const char *>(&relocationSection),
                 sizeof(int16_t));

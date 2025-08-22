@@ -7,9 +7,9 @@
 #include <unordered_map>
 #include <vector>
 
-Linker::Linker(){}
+Linker::Linker() {}
 
-void Linker::Link(const std::vector<std::string>& objFilePaths) {
+void Linker::Link(const std::vector<std::string> &objFilePaths) {
   FirstPass(objFilePaths);
   SecondPass();
 }
@@ -18,7 +18,6 @@ void Linker::GenerateOutput(const std::string &outputName) {
   // criar o .hpx contendo código binário + tabela de relocação global
 }
 void Linker::SecondPass() {
-
   linkedCode.clear();
   globalRelocationTable.clear();
 
@@ -26,9 +25,10 @@ void Linker::SecondPass() {
     for (const auto &intuse : mod.intUseTable) {
       const std::string &symbol = intuse.first;
       const auto it = globalSymbolTable.find(symbol);
-      if (it == globalSymbolTable.end() || it->second.first == UNRESOLVED_ADDRESS){
+      if (it == globalSymbolTable.end() ||
+          it->second.first == UNRESOLVED_ADDRESS) {
         continue;
-      } 
+      }
 
       const int16_t &address = it->second.first;
 
@@ -50,8 +50,7 @@ void Linker::SecondPass() {
   for (const auto &mod : modules) {
     const size_t start = static_cast<size_t>(mod.loadAddress);
     if (start + mod.code.size() > linkedCode.size()) {
-      errors.push_back("Módulo " + mod.name +
-                           " excede o tamanho do código.");
+      errors.push_back("Módulo " + mod.name + " excede o tamanho do código.");
       continue;
     }
     std::copy(mod.code.begin(), mod.code.end(), linkedCode.begin() + start);
@@ -64,7 +63,7 @@ void Linker::SecondPass() {
     for (const auto &intuse : mod.intUseTable) {
       for (auto globalPos : intuse.second) {
         const int16_t key = static_cast<int16_t>(globalPos);
-        if (!globalRelocationTable.contains(key)){
+        if (!globalRelocationTable.contains(key)) {
           globalRelocationTable[key] = DIRECT;
         }
       }
@@ -92,23 +91,23 @@ void Linker::FirstPass(const std::vector<std::string> &objFilePaths) {
         globalSymbolTable[symbol] = {relocatedAddr, mod.name};
       }
     }
-    for(auto &[symbol, positions] : mod.intUseTable) {
+    for (auto &[symbol, positions] : mod.intUseTable) {
       if (!globalSymbolTable.contains(symbol)) {
         errors.push_back("Símbolo " + symbol + " não definido globalmente.");
-      }else {
-        for(auto &pos : positions) {
+      } else {
+        for (auto &pos : positions) {
           pos += mod.loadAddress;
         }
       }
     }
-  
+
     std::unordered_map<int16_t, OperandFormat> newRelocationTable;
     newRelocationTable.reserve(mod.relocationTable.size());
 
     for (const auto &reloc : mod.relocationTable) {
       const int16_t localIndex = reloc.first;
       const OperandFormat format = reloc.second;
-  
+
       switch (format) {
         case IMMEDIATE:
           break;
@@ -117,18 +116,16 @@ void Linker::FirstPass(const std::vector<std::string> &objFilePaths) {
           mod.code[localIndex] += mod.loadAddress;
           break;
         default:
-          errors.push_back("Tipo de relocação desconhecido: " + std::to_string(static_cast<int>(format)));
+          errors.push_back("Tipo de relocação desconhecido: " +
+                           std::to_string(static_cast<int>(format)));
           break;
       }
-  
+
       const int16_t globalIndex = localIndex + mod.loadAddress;
       newRelocationTable[globalIndex] = format;
     }
     mod.relocationTable = std::move(newRelocationTable);
   }
-
-  
-  
 }
 
 // escreve o arquivo .obj com base no vetor this->objectCode
@@ -154,6 +151,17 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
     ObjSectionType section = static_cast<ObjSectionType>(rawType);
 
     switch (section) {
+      case ObjSectionType::NAME: {
+        int16_t nameLen;
+        objFile.read(reinterpret_cast<char *>(&nameLen), sizeof(int16_t));
+
+        std::string name(nameLen, '\0');
+        objFile.read(&name[0], nameLen);
+
+        module.startName = name;
+
+        break;
+      }
       case ObjSectionType::STACK_SIZE: {
         objFile.read(reinterpret_cast<char *>(&module.stackSize),
                      sizeof(int16_t));
@@ -251,7 +259,7 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
 void Linker::printModules() {
   for (const auto &mod : modules) {
     std::cout << "Module Name: " << mod.name << "\n";
-
+    std::cout << "Program Name (start): " << mod.startName << "\n";
     std::cout << "Code: ";
     for (const auto &val : mod.code) {
       std::cout << val << " ";
@@ -274,7 +282,8 @@ void Linker::printModules() {
 
     std::cout << "Relocation Table:\n";
     for (const auto &[address, type] : mod.relocationTable) {
-      std::cout << "  Address: " << address << ", Type: " << static_cast<int>(type) << "\n";
+      std::cout << "  Address: " << address
+                << ", Type: " << static_cast<int>(type) << "\n";
     }
     std::cout << "Stack Size: " << mod.stackSize << "\n";
     std::cout << "Start Address: " << mod.startAddress << "\n";
@@ -298,6 +307,7 @@ void Linker::printModules() {
 
   std::cout << "Global Relocation Table:\n";
   for (const auto &[address, type] : globalRelocationTable) {
-    std::cout << "  Address: " << address << ", Type: " << static_cast<int>(type) << "\n";
+    std::cout << "  Address: " << address
+              << ", Type: " << static_cast<int>(type) << "\n";
   }
 }
