@@ -116,7 +116,7 @@ bool Loader::SetMemory(VMState &vm) {
   vm.memory[this->module.stackSize + 3] =
       this->module.entryPoint + this->module.stackSize + 4;
 
-  vm.memory[1] = this->module.stackSize + 3;
+  vm.memory[1] = this->module.stackSize + 4;
 
   int j = 0;
   if (memory.size() + 4 + this->module.stackSize > 500) {

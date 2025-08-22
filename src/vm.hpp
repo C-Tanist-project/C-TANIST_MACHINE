@@ -1,7 +1,5 @@
 #pragma once
 
-#include "types.hpp"
-
 #include <chrono>
 #include <condition_variable>
 #include <cstring>
@@ -9,6 +7,8 @@
 #include <syncstream>
 #include <thread>
 #include <variant>
+
+#include "types.hpp"
 
 void ExecuteStep(VMState &vm);
 void VMStateSetup(VMState &vm);
@@ -22,7 +22,7 @@ OperandFormat DecodeOperandFormat(int16_t instruction,
                                   unsigned char operandIdx);
 
 class Operations {
-public:
+ public:
   using OpFunc = void (*)(VMState &);
   friend class VMEngine;
 
@@ -51,13 +51,13 @@ public:
 
   static void ADD(VMState &vm) {
     int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
-    vm.acc += operand;
-    std::cout << "Somando " << operand << " ao ACC\n";
+    vm.acc += vm.memory[operand];
+    std::cout << "Somando " << vm.memory[operand] << " ao ACC\n";
   }
 
   static void MULT(VMState &vm) {
     int16_t operand = FetchValue(vm.memory[vm.pc], 0, vm);
-    vm.acc *= operand;
+    vm.acc *= vm.memory[operand];
   }
 
   static void DIVIDE(VMState &vm) {
@@ -93,7 +93,7 @@ public:
   }
 
   static void RET(VMState &vm) {
-    vm.pc = vm.sp;
+    vm.pc = vm.memory[vm.sp] + 1;
     vm.sp -= 1;
   }
 
@@ -105,7 +105,7 @@ public:
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     vm.acc = vm.inputValue;
-    std::cout << "Input: " << vm.inputValue << std::endl; // teste
+    std::cout << "Input: " << vm.inputValue << std::endl;  // teste
   }
 
   static void PUSH(VMState &vm) {
@@ -170,7 +170,6 @@ public:
     }
 
     std::cout << "Output: " << value << std::endl;
-
   }
 
   static void BRZERO(VMState &vm) {
@@ -197,7 +196,7 @@ class VMEngine {
   static inline std::mutex controlMutex;
   static inline std::queue<VMControls> controlQueue;
 
-public:
+ public:
   void Run(VMState &vm) {
     bool finishing{false}, stepping{false}, hasInitialCopy{false},
         paused{false};
@@ -209,36 +208,36 @@ public:
 
       if (control != NONE) {
         switch (control) {
-        case CLOSE:
-          return;
-        case FINISH:
-          finishing = true;
-        case RUN:
-          vm.isRunning.exchange(true);
-          paused = false;
-          break;
-        case STEP:
-          stepping = true;
-          paused = false;
-          break;
-        case PAUSE:
-          paused = true;
-          break;
-        case STOP:
-          vm.isRunning.exchange(false);
-          vm.isHalted.exchange(false);
-          hasInitialCopy = false;
-          stepping = false;
-          finishing = false;
-          {
-            std::lock_guard<std::mutex> lock(vm.mutex);
-            memcpy(vm.memory, buffer, sizeof(buffer));
-            vm.updatedMemoryAddresses.push(-1);
-          }
-          VMStateSetup(vm);
-          break;
-        case NONE:
-          break;
+          case CLOSE:
+            return;
+          case FINISH:
+            finishing = true;
+          case RUN:
+            vm.isRunning.exchange(true);
+            paused = false;
+            break;
+          case STEP:
+            stepping = true;
+            paused = false;
+            break;
+          case PAUSE:
+            paused = true;
+            break;
+          case STOP:
+            vm.isRunning.exchange(false);
+            vm.isHalted.exchange(false);
+            hasInitialCopy = false;
+            stepping = false;
+            finishing = false;
+            {
+              std::lock_guard<std::mutex> lock(vm.mutex);
+              memcpy(vm.memory, buffer, sizeof(buffer));
+              vm.updatedMemoryAddresses.push(-1);
+            }
+            VMStateSetup(vm);
+            break;
+          case NONE:
+            break;
         }
       }
 
@@ -277,11 +276,10 @@ public:
     }
   }
 
-private:
+ private:
   VMControls GetNextCommand() {
     std::lock_guard<std::mutex> lock(controlMutex);
-    if (controlQueue.empty())
-      return NONE;
+    if (controlQueue.empty()) return NONE;
     auto command = controlQueue.front();
     controlQueue.pop();
     return command;
