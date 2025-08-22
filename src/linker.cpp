@@ -18,7 +18,7 @@ void Linker::Pass(const std::filesystem::path &projectFolder) {
 
   for (const auto &entry : std::filesystem::directory_iterator(inputPath)) {
     if (std::filesystem::is_regular_file(entry.status())) {
-      objFilePaths.push_back(entry.path());
+      objFilePaths.push_back(entry.path().string());
     }
   }
 
