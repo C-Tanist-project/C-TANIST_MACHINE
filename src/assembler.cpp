@@ -678,10 +678,10 @@ void Assembler::Pass(std::filesystem::path &projectFolder) {
       std::cout << entry.path() << std::endl;
       std::filesystem::path currentFile(entry.path());
       Assemble(currentFile.string(),
-               outputPath /
-                   currentFile.filename().replace_extension(".OBJ").string(),
-               listingPath /
-                   currentFile.filename().replace_extension(".LST").string());
+               (outputPath / currentFile.filename().replace_extension(".OBJ"))
+                   .string(),
+               (listingPath / currentFile.filename().replace_extension(".LST"))
+                   .string());
     }
   }
 }
