@@ -1,4 +1,5 @@
 build/
+.cache/
 .ccls-cache
 .clang-format
 .clangd

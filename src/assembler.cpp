@@ -1,5 +1,6 @@
 #include "assembler.hpp"
 
+#include <filesystem>
 #include <regex>
 #include <string>
 
@@ -108,8 +109,8 @@ AssemblingStatus Assembler::FirstPass() {
         return buildError(lineCounter, instruction.label, SYMBOL_REDEFINITION);
       }
       defSymData.defined =
-          true;  // Simbolo definido na tabela de definições não significa que
-                 // foi definido na tabela de símbolos
+          true; // Simbolo definido na tabela de definições não significa que
+                // foi definido na tabela de símbolos
       defSymData.address = UNRESOLVED_ADDRESS;
       defSymData.line = lineCounter;
       continue;
@@ -469,17 +470,17 @@ AssemblingStatus Assembler::SecondPass() {
             }
             int16_t address;
             std::string addressToLst;
-            if (operand[0] == '@') {  // literal
+            if (operand[0] == '@') { // literal
               address = literalTable[operand].address;
               addressToLst = std::to_string(literalTable[operand].address);
               relocationTable.emplace(static_cast<int16_t>(objectCode.size()),
                                       OperandFormat::DIRECT);
-            } else if (symbolTable.contains(operand)) {  // símbolo local
+            } else if (symbolTable.contains(operand)) { // símbolo local
               address = symbolTable[operand].address;
               addressToLst = std::to_string(symbolTable[operand].address);
               relocationTable.emplace(static_cast<int16_t>(objectCode.size()),
                                       OperandFormat::DIRECT);
-            } else {  // símbolo definido em outro módulo
+            } else { // símbolo definido em outro módulo
               address = 0;
               addressToLst = "0";
               intUseTable[operand].push_back(objectCode.size());
@@ -533,7 +534,6 @@ void Assembler::WriteObjectCodeFile() {
   if (!objFile) {
     std::cerr << "Erro ao abrir o arquivo de código objeto: "
               << this->objFilePath << std::endl;
-    return;
   }
 
   // NAME
@@ -601,7 +601,7 @@ void Assembler::WriteObjectCodeFile() {
 
   for (const auto &[address, type] : this->relocationTable) {
     objFile.write(reinterpret_cast<const char *>(&address), sizeof(int16_t));
-    int16_t typeVal = static_cast<int16_t>(type);  // DIRECT ou INDIRECT
+    int16_t typeVal = static_cast<int16_t>(type); // DIRECT ou INDIRECT
     objFile.write(reinterpret_cast<const char *>(&typeVal), sizeof(int16_t));
   }
 
@@ -613,11 +613,12 @@ void Assembler::WriteObjectCodeFile() {
 
 // escreve o arquivo .lst com this->listingLines e this->listingErrors
 void Assembler::WriteListingFile() {
+
   std::ofstream lstFile(this->lstFilePath);
-  if (!lstFile) {
-    std::cerr << "Erro ao abrir o arquivo de listagem: " << this->lstFilePath
+
+  if (!lstFile.is_open()) {
+    std::cerr << "Erro ao criar o arquivo de listagem: " << this->lstFilePath
               << std::endl;
-    return;
   }
 
   lstFile << "\nLISTAGEM DE CÓDIGO\n";
@@ -662,17 +663,18 @@ void Assembler::ResetAssembler() {
   relocationTable.clear();
 }
 
-void Assembler::CallAssembler(std::vector<std::string> paths) {
-  for (const auto &path : paths) {
-    MacroProcessor macross(path);
-    macross.Pass();
-    size_t lastSlash = path.rfind('/');
-    std::string fileName =
-        path.substr(lastSlash + 1, path.find_last_of('.') - (lastSlash + 1));
-    std::string asmFilePath = "./MASMAPRG.ASM";
-    std::string objFilePath = "./obj/" + fileName + ".obj";
-    std::string lstFilePath = "./lst/" + fileName + ".lst";
+void Assembler::Pass(std::filesystem::path &projectFolder) {
+  std::filesystem::path inputPath = projectFolder / "ASM";
+  std::filesystem::path outputPath = projectFolder / "OBJ";
+  std::filesystem::path listingPath = projectFolder / "LST";
 
-    Assemble(asmFilePath, objFilePath, lstFilePath);
+  for (const auto &entry : std::filesystem::directory_iterator(inputPath)) {
+    if (std::filesystem::is_regular_file(entry.status())) {
+      std::cout << entry.path() << std::endl;
+      std::filesystem::path currentFile(entry.path());
+      Assemble(currentFile,
+               outputPath / currentFile.filename().replace_extension(".OBJ"),
+               listingPath / currentFile.filename().replace_extension(".LST"));
+    }
   }
 }

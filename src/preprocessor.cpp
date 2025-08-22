@@ -1,4 +1,5 @@
 #include "preprocessor.hpp"
+#include <filesystem>
 
 static inline bool IcharEquals(char a, char b) {
   return std::tolower(static_cast<unsigned char>(a)) ==
@@ -239,16 +240,23 @@ void MacroProcessor::PopActualParameterLevel(int level) {
   }
 }
 
-MacroProcessor::MacroProcessor(const std::string &asmFilePath) {
-  this->asmFilePath = asmFilePath;
-  this->outputFilePath = "MASMAPRG.ASM";
-  this->definitionLevel = 0;
-  this->expansionLevel = 0;
+MacroProcessor::MacroProcessor(const std::string &outputFolder) {
+  this->outputFilePath = outputFolder;
 }
 
-void MacroProcessor::Pass() {
+void MacroProcessor::Pass(const std::string &asmFilePath) {
+  this->definitionLevel = 0;
+  this->expansionLevel = 0;
+
   std::ifstream file(asmFilePath);
-  std::ofstream output(outputFilePath);
+
+  std::filesystem::path inputFileCorrector(asmFilePath);
+  std::filesystem::path outputPathCorrector(outputFilePath);
+
+  outputPathCorrector = outputPathCorrector /
+                        ("MASMAPRG-" + inputFileCorrector.filename().string());
+
+  std::ofstream output(outputPathCorrector.string());
 
   std::string line;
 
