@@ -1,4 +1,5 @@
 #include "preprocessor.hpp"
+#include <filesystem>
 
 static inline bool IcharEquals(char a, char b) {
   return std::tolower(static_cast<unsigned char>(a)) ==
@@ -240,13 +241,23 @@ void MacroProcessor::PopActualParameterLevel(int level) {
   }
 }
 
-MacroProcessor::MacroProcessor() {
-  this->definitionLevel = 0;
-  this->expansionLevel = 0;
+MacroProcessor::MacroProcessor(const std::string &outputFolder) {
+  this->outputFilePath = outputFolder;
 }
 
-void MacroProcessor::Pass(const std::string &asmFilePath) {
+std::string MacroProcessor::Pass(const std::string &asmFilePath) {
+  this->definitionLevel = 0;
+  this->expansionLevel = 0;
+
   std::ifstream file(asmFilePath);
+
+  std::filesystem::path inputFileCorrector(asmFilePath);
+  std::filesystem::path outputPathCorrector(outputFilePath);
+
+  outputPathCorrector = outputPathCorrector /
+                        ("MASMAPRG-" + inputFileCorrector.filename().string());
+
+  std::ofstream output(outputPathCorrector.string());
 
   std::string line;
 
@@ -268,7 +279,6 @@ void MacroProcessor::Pass(const std::string &asmFilePath) {
   }
 
   while (!line.empty()) {
-
     do {
       if (std::regex_search(line, matchMacro)) {
         nextLineIsPrototype = true;
@@ -339,7 +349,7 @@ void MacroProcessor::Pass(const std::string &asmFilePath) {
       }
 
       if (this->definitionLevel == 0) {
-        std::cout << line << std::endl;
+        output << line << std::endl;
       } else {
         this->currentMacroDefinition->macroSkeleton.append(line + '\n');
       }
@@ -353,4 +363,7 @@ void MacroProcessor::Pass(const std::string &asmFilePath) {
       std::getline(file, line);
     }
   }
+  std::cout << "Escrito em: " << outputPathCorrector.string() << std::endl;
+  output.close();
+  return std::format("MASMAPRG-{}", outputFilePath);
 }

@@ -53,7 +53,7 @@ struct ParseResult {
 ParseResult ParseLine(const std::string &line, int lineNumber);
 
 class Assembler {
- private:
+private:
   static inline const std::unordered_set<std::string> assemblerInstructions = {
       // instruções de máquina
       "ADD", "BR", "BRNEG", "BRPOS", "BRZERO", "CALL", "COPY", "DIVIDE", "LOAD",
@@ -79,8 +79,8 @@ class Assembler {
   // inserir erros de montagem aqui (não sei se precisa ser um vetor)
   std::vector<ListingError> listingErrors;
   std::unordered_map<std::string, AssemblerIntDefData>
-      intDefTable;        // tabela de simbolos definidos no modulo
-  int16_t stackSize = 0;  // tamanho da pilha
+      intDefTable;       // tabela de simbolos definidos no modulo
+  int16_t stackSize = 0; // tamanho da pilha
 
   std::unordered_map<int16_t, OperandFormat> relocationTable;
   std::unordered_map<std::string, std::vector<int16_t>> intUseTable;
@@ -95,7 +95,7 @@ class Assembler {
                              const std::string &objFilePath,
                              const std::string &lstFilePath);
 
- public:
+public:
   Assembler();
-  void CallAssembler(std::vector<std::string> paths);
+  void Pass(std::string &asmFolder, std::string &outputFolder);
 };

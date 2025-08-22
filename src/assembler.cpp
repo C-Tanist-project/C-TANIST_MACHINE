@@ -1,5 +1,6 @@
 #include "assembler.hpp"
 
+#include <filesystem>
 #include <regex>
 #include <string>
 
@@ -585,15 +586,9 @@ void Assembler::ResetAssembler() {
   relocationTable.clear();
 }
 
-void Assembler::CallAssembler(std::vector<std::string> paths) {
-  for (const auto &path : paths) {
-    size_t lastSlash = path.rfind('/');
-    std::string fileName =
-        path.substr(lastSlash + 1, path.find_last_of('.') - (lastSlash + 1));
-    std::string asmFilePath = path;
-    std::string objFilePath = "./obj/" + fileName + ".obj";
-    std::string lstFilePath = "./lst/" + fileName + ".lst";
+void Assembler::Pass(std::string &asmFolder, std::string &outputFolder) {
+  std::filesystem::path inputFolder(asmFolder);
+  std::filesystem::path outputFolder(outputFolder);
 
-    Assemble(asmFilePath, objFilePath, lstFilePath);
-  }
+  Assemble(asmFilePath, objFilePath, lstFilePath);
 }

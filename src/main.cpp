@@ -1,18 +1,17 @@
 #include <cstring>
-#include <initializer_list>
 #include <thread>
 
-#include "assembler.hpp"
-#include "linker.hpp"
 #include "pipeline.hpp"
-#include "preprocessor.hpp"
 #include "ui.hpp"
 #include "vm.hpp"
 
 int main(int argc, char *argv[]) {
   if (argc > 2 && strcmp(argv[1], "-C") == 0) {
-    MacroProcessor macross(argv[2]);
-    macross.Pass();
+    AssemblyPipeline pipeline("new-project");
+    for (int i = 2; i < argc; ++i) {
+      std::cout << "adicionando \"" << argv[i] << "\"...\n";
+      pipeline.AddRawSource(argv[i]);
+    }
     return 0;
   }
 
