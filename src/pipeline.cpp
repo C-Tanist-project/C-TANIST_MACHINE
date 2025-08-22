@@ -42,7 +42,6 @@ AssemblyPipeline::AssemblyPipeline(const std::string &projectName)
         throw(-1);
       } else {
         for (const auto &entry : std::filesystem::directory_iterator(path)) {
-          // remove_all can delete files and directories recursively
           std::filesystem::remove_all(entry.path());
         }
       }
