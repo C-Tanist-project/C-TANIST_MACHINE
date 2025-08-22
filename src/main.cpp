@@ -10,8 +10,8 @@ int main(int argc, char *argv[]) {
     AssemblyPipeline pipeline("new-project");
     for (int i = 2; i < argc; ++i) {
       pipeline.AddRawSource(argv[i]);
-      pipeline.Pass();
     }
+    pipeline.Pass();
     return 0;
   }
 

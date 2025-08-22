@@ -25,6 +25,7 @@ void Linker::Pass(const std::filesystem::path &projectFolder) {
   FirstPass(objFilePaths);
   SecondPass();
   GenerateOutput(outputPath);
+  printModules();
 }
 
 void Linker::GenerateOutput(const std::filesystem::path &outputPath) {
@@ -45,15 +46,15 @@ void Linker::GenerateOutput(const std::filesystem::path &outputPath) {
   out.write(reinterpret_cast<char *>(&this->globalStackSize), sizeof(int16_t));
 
   int32_t codeSize = this->linkedCode.size();
-  out.write(reinterpret_cast<char *>(&codeSize), sizeof(codeSize));
+  out.write(reinterpret_cast<char *>(&codeSize), sizeof(int16_t));
   out.write(reinterpret_cast<const char *>(this->linkedCode.data()),
             codeSize * sizeof(int16_t));
 
   int32_t relocSize = this->globalRelocationTable.size();
-  out.write(reinterpret_cast<char *>(&relocSize), sizeof(relocSize));
+  out.write(reinterpret_cast<char *>(&relocSize), sizeof(int16_t));
   for (auto &[offset, fmt] : this->globalRelocationTable) {
-    out.write(reinterpret_cast<const char *>(&offset), sizeof(offset));
-    out.write(reinterpret_cast<const char *>(&fmt), sizeof(fmt));
+    out.write(reinterpret_cast<const char *>(&offset), sizeof(int16_t));
+    out.write(reinterpret_cast<const char *>(&fmt), sizeof(int16_t));
   }
 }
 
