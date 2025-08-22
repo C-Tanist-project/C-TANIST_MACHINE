@@ -24,9 +24,9 @@ int main(int argc, char *argv[]) {
 
   Assembler *assembler = new Assembler();
   std::vector<std::string> paths;
-  paths.push_back("./tests/test.asm");
-  paths.push_back("./tests/test2.asm");
-  paths.push_back("./tests/test3.asm");
+  // paths.push_back("./tests/test.asm");
+  // paths.push_back("./tests/test2.asm");
+  // paths.push_back("./tests/test3.asm");
   paths.push_back("./tests/test4.asm");
   assembler->CallAssembler(paths);
 

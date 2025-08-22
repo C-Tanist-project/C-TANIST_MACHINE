@@ -37,6 +37,7 @@ void Assembler::Assemble(const std::string &asmFilePath,
   ResetAssembler();
   this->assemblingStatus = FirstPass();
   if (this->assemblingStatus.exitCode == SUCCESS) {
+    std::cout << "Primeiro passo fucnional" << std::endl;
     this->assemblingStatus = SecondPass();
   }
   WriteObjectCodeFile();
@@ -146,7 +147,6 @@ AssemblingStatus Assembler::FirstPass() {
                           SYNTAX_ERROR);  // erro de start dps do end
       } else {
         foundStart = true;
-        // locationCounter = std::stoi(instruction.operands[0]);
       }
 
     } else if (mnemonic == "END") {
@@ -161,12 +161,8 @@ AssemblingStatus Assembler::FirstPass() {
       locationCounter += 1;
 
     } else if (mnemonic == "SPACE") {
-      if (instruction.operands.size() != 0) {
-        return buildError(
-            lineCounter, mnemonic,
-            SYNTAX_ERROR);  // Space não precisa de operandos (precisa, para
-                            // definir mais de um espaço. Mas tô deixando aqui
-                            // só pra poder testar essa bomba)
+      if (instruction.operands.size() < 0 || instruction.operands.size() > 2) {
+        return buildError(lineCounter, mnemonic, SYNTAX_ERROR);
       }
       locationCounter += 1;
 
@@ -175,8 +171,6 @@ AssemblingStatus Assembler::FirstPass() {
         return buildError(lineCounter, mnemonic,
                           SYNTAX_ERROR);  // STACK sem operando
       }
-      // locationCounter += std::stoi(instruction.operands[0]); --Tava
-      // deslocando o locationCounter com base no tamanho da pilha
 
     } else if (opcodes.contains(mnemonic)) {
       if (mnemonic == "COPY") {
@@ -204,17 +198,14 @@ AssemblingStatus Assembler::FirstPass() {
     for (auto &operand : instruction.operands) {
       if (operand.empty()) continue;
 
-      // 🔹 Remover prefixo '#' (endereçamento imediato)
       if (operand[0] == '#') {
         operand = operand.substr(1);
       }
 
-      // 🔹 Remover sufixo ',I' (endereçamento indireto)
-      if (operand.size() > 2 && operand.substr(operand.size() - 2) == "I") {
+      if (operand.size() > 2 && operand.substr(operand.size() - 2) == ",I") {
         operand = operand.substr(0, operand.size() - 2);
       }
 
-      // 🔹 Verificar literais iniciados com '@'
       if (!operand.empty() && operand[0] == '@') {
         const std::string digits = operand.substr(1);
         if (digits.empty() ||
@@ -321,7 +312,6 @@ ParseResult Assembler::ParseLine(const std::string &line, int lineNumber) {
   skipSpaces(idx);
   while (idx < line.size()) {
     if (line[idx] == ';') {
-      // Encontrou início de comentário -> ignora resto da linha
       break;
     }
 
@@ -355,6 +345,11 @@ AssemblingStatus Assembler::SecondPass() {
   std::string line;
   std::ifstream file(this->asmFilePath);
 
+  if (!file) {
+    std::cerr << "Error opening file" << this->asmFilePath << std::endl;
+    return buildError(0, "file", SYNTAX_ERROR);
+  }
+
   while (std::getline(file, line)) {
     ++this->lineCounter;
 
@@ -376,16 +371,22 @@ AssemblingStatus Assembler::SecondPass() {
         return first;
       }();
 
+      std::string firstTokenToUp = firstToken;
+      std::transform(firstTokenToUp.begin(), firstTokenToUp.end(),
+                     firstTokenToUp.begin(),
+                     [](unsigned char c) { return std::toupper(c); });
       label = "";
       opcode = "";
       operand1 = "";
       operand2 = "";
 
-      if (!assemblerInstructions.contains(firstToken)) {
+      if (!assemblerInstructions.contains(firstTokenToUp)) {
         lineStream >> label >> opcode >> operand1 >> operand2;
       } else {
         lineStream >> opcode >> operand1 >> operand2;
       }
+      std::transform(opcode.begin(), opcode.end(), opcode.begin(),
+                     [](unsigned char c) { return std::toupper(c); });
 
       if (opcodes.contains(opcode)) {
         objectCode.push_back(opcodes[opcode]);
@@ -412,10 +413,12 @@ AssemblingStatus Assembler::SecondPass() {
             generatedCodeForLst += operand;
           }
           // INDIRETO
-          else if (operand.back() == 'I') {
+          else if (operand.size() >= 2 &&
+                   operand.substr(operand.size() - 2) == ",I") {
             finalOpCode += whichOne;
             objectCode[opcodeIdx] = finalOpCode;
-            operand.pop_back();
+            operand = operand.substr(0, operand.size() - 2);
+
             if (!symbolTable.contains(operand)) {
               status = buildError(lineCounter, operand, SYMBOL_UNDEFINED);
               return;
@@ -427,6 +430,12 @@ AssemblingStatus Assembler::SecondPass() {
 
             // IMEDIATO
           } else if (operand[0] == '#') {
+            if (opcode == "BR" || opcode == "BRNEG" || opcode == "BRPOS" ||
+                opcode == "BRZERO" || opcode == "CALL" || opcode == "READ" ||
+                opcode == "STORE") {
+              status = buildError(lineCounter, operand, INVALID_CHARACTER);
+              return;
+            }
             if (opcode == "COPY" && whichOne == 32) {
               status = buildError(
                   lineCounter, operand,
@@ -438,8 +447,11 @@ AssemblingStatus Assembler::SecondPass() {
             operand = operand.substr(1);
             if (operand[0] == 'H') {
               operand = operand.substr(2, operand.size() - 3);
+              objectCode.push_back(
+                  static_cast<int16_t>(std::stoi(operand, nullptr, 16)));
+            } else {
+              objectCode.push_back(static_cast<int16_t>(std::stoi(operand)));
             }
-            objectCode.push_back(static_cast<int16_t>(std::stoi(operand)));
             generatedCodeForLst += " ";
             generatedCodeForLst += operand;
             return;
@@ -482,12 +494,17 @@ AssemblingStatus Assembler::SecondPass() {
         listingLine.sourceCode = sourceCodeForLst;
 
         listingLines.push_back(listingLine);
-
       } else if (opcode == "STACK")
         stackSize = std::stoi(operand1);
-      else if (opcode == "CONST")
+      else if (opcode == "CONST") {
+        if (operand1[0] == 'H') {
+          operand1 = operand1.substr(2, operand1.size() - 3);
+          objectCode.push_back(
+              static_cast<int16_t>(std::stoi(operand1, NULL, 16)));
+          continue;
+        }
         objectCode.push_back(static_cast<int16_t>(std::stoi(operand1)));
-      else if (opcode == "SPACE") {
+      } else if (opcode == "SPACE") {
         if (operand1 == "") operand1 = "1";
         objectCode.insert(objectCode.end(), std::stoi(operand1), 0);
       } else
@@ -594,10 +611,8 @@ void Assembler::WriteListingFile() {
   lstFile.close();
 }
 
-AssemblingStatus Assembler::buildError(
-    int16_t line, const std::string &token,
-    AssemblerExitCode statusCode) {  // acredito que a função não precise estar
-                                     // na classe, apenas ser uma helper
+AssemblingStatus Assembler::buildError(int16_t line, const std::string &token,
+                                       AssemblerExitCode statusCode) {
   AssemblingStatus status;
   status.lineNumber = line;
   status.badToken = token;
