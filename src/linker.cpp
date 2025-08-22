@@ -36,10 +36,10 @@ void Linker::FirstPass(const std::vector<std::string> &objFilePaths) {
     }
   }
 
-  for(auto &mod : modules) {
-    for(auto &intuse : mod.intUseTable) {
+  for (auto &mod : modules) {
+    for (auto &intuse : mod.intUseTable) {
       auto &positions = intuse.second;
-      for(auto &pos : positions) {
+      for (auto &pos : positions) {
         pos += mod.loadAddress;
       }
     }
@@ -57,7 +57,8 @@ void Linker::FirstPass(const std::vector<std::string> &objFilePaths) {
           mod.code[locaIndex] += mod.loadAddress;
           break;
         default:
-          errors.push_back("Tipo de relocação desconhecido: " + std::to_string(static_cast<int>(format)));
+          errors.push_back("Tipo de relocação desconhecido: " +
+                           std::to_string(static_cast<int>(format)));
           break;
       }
 
@@ -91,6 +92,17 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
     ObjSectionType section = static_cast<ObjSectionType>(rawType);
 
     switch (section) {
+      case ObjSectionType::NAME: {
+        int16_t nameLen;
+        objFile.read(reinterpret_cast<char *>(&nameLen), sizeof(int16_t));
+
+        std::string name(nameLen, '\0');
+        objFile.read(&name[0], nameLen);
+
+        module.startName = name;
+
+        break;
+      }
       case ObjSectionType::STACK_SIZE: {
         objFile.read(reinterpret_cast<char *>(&module.stackSize),
                      sizeof(int16_t));
@@ -114,7 +126,8 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
 
           int16_t relocatedAddr = address + module.loadAddress;
 
-          if (globalSymbolTable.count(label) && globalSymbolTable[label].first != UNRESOLVED_ADDRESS) {
+          if (globalSymbolTable.count(label) &&
+              globalSymbolTable[label].first != UNRESOLVED_ADDRESS) {
             errors.push_back("Símbolo global já definido: " + label + " [" +
                              filePath + "/" + globalSymbolTable[label].second +
                              "]");
@@ -202,7 +215,7 @@ void Linker::ReadObjectCodeFile(const std::string &filePath) {
 void Linker::printModules() {
   for (const auto &mod : modules) {
     std::cout << "Module Name: " << mod.name << "\n";
-
+    std::cout << "Program Name (start): " << mod.startName << "\n";
     std::cout << "Code: ";
     for (const auto &val : mod.code) {
       std::cout << val << " ";

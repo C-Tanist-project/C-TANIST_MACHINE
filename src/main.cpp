@@ -24,23 +24,23 @@ int main(int argc, char *argv[]) {
 
   Assembler *assembler = new Assembler();
   std::vector<std::string> paths;
-  // paths.push_back("./tests/test.asm");
-  // paths.push_back("./tests/test2.asm");
+  paths.push_back("./tests/test.asm");
+  paths.push_back("./tests/test2.asm");
   // paths.push_back("./tests/test3.asm");
-  paths.push_back("./tests/test4.asm");
+  // paths.push_back("./tests/test4.asm");
   assembler->CallAssembler(paths);
 
   Linker *linker = new Linker;
   std::vector<std::string> objPaths;
   objPaths.push_back("./obj/test.obj");
   objPaths.push_back("./obj/test2.obj");
-  objPaths.push_back("./obj/test4.obj");
-  linker->ReadObjectCodeFile("./obj/test4.obj");
+  // objPaths.push_back("./obj/test4.obj");
+  linker->ReadObjectCodeFile("./obj/test.obj");
   linker->printModules();
 
-  std::vector<std::string> objPaths;
-  objPaths.push_back("./obj/test.obj");
-  objPaths.push_back("./obj/test2.obj");
+  // std::vector<std::string> objPaths;
+  // objPaths.push_back("./obj/test.obj");
+  // objPaths.push_back("./obj/test2.obj");
   linker->FirstPass(objPaths);
 
   std::thread engineThread(&VMEngine::Run, &engine, std::ref(vm));
